@@ -1,0 +1,21 @@
+##ignore this file##
+*.idea
+__pycache__
+*.zip
+flower_data
+*.h5
+*.pth
+*.pt
+*.ckpt.*
+*.ckpt
+*.config
+*.gz
+*.onnx
+*.xml
+*.bin
+*.mapping
+*.csv
+checkpoint
+data
+runs
+

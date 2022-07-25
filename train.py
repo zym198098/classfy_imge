@@ -263,15 +263,15 @@ if __name__=='__main__':
     8: "Bag",
     9: "Ankle Boot",
         }
-    classes=create_classimage_dataset(root_dir="/home/zym/下载/egg1",train_ratio=0.8,train_name='train_jidan.txt',
-        test_name='test_jidan.txt')
+    classes=create_classimage_dataset(root_dir="/home/zym/下载/egg1",train_ratio=0.8,train_name='train_jidan1.txt',
+        test_name='test_jidan1.txt')
     print(classes)
     #类别数量
     classes_size=len(classes)
     # 多GPU训练
     muli_gpu=False
-    batch_size =8#训练批次
-    batch_size_test =48#验证批次
+    batch_size =3#训练批次
+    batch_size_test =24#验证批次
     ##给训练集和测试集分别创建一个数据集加载器 class_image/test.txt
     train_data = LoadData("train_jidan.txt", True)
     valid_data = LoadData("test_jidan.txt", False)
@@ -339,8 +339,8 @@ if __name__=='__main__':
     #     **kwargs,
     # )
     # model=models.VisionTransformer(image_size=640,patch_size=32,num_layers=12,num_heads=12,hidden_dim=768,mlp_dim=3072,dropout=0.2,num_classes=classes_size+1)
-    # model=models.efficientnet_b7(pretrained=False,num_classes=classes_size)
-    model=models.resnet50(pretrained=False,num_classes=classes_size+1)
+    model=models.efficientnet_b4(pretrained=False,num_classes=classes_size)
+    # model=models.resnet50(pretrained=False,num_classes=classes_size+1)
 
     print(model)
         # 如果显卡可用，则用显卡进行训练
@@ -350,12 +350,21 @@ if __name__=='__main__':
         if (torch.cuda.device_count()>1) & muli_gpu:
             model=nn.DataParallel(model)
     
-  
+     # 保存训练好的模型
+    # model_path='jidan_rest50_last.pth'
+    model_name='jidan_efficent4'
+    # model_name='jidan_restnet50'
+    model_path=model_name+'_last.pth' 
+    #从最好的模型开始训练
+    model.load_state_dict(torch.load(model_name+'_last.pth') )
+
     # device = "cuda" if torch.cuda.is_available() else "cpu"
     model.to(device)
-    input=torch.randn(1,3,640,640).to(device)
-    y=model(input)
-    print(y)
+    input=torch.randn(1,3,664,664).to(device)
+    # with torch.no_grad():
+    #     model.eval()
+    #     y=model(input)
+    #     print(y)
      
     print(f"Using {device} device")
     # 定义损失函数，计算相差多少，交叉熵，
@@ -363,21 +372,25 @@ if __name__=='__main__':
 
     # 定义优化器，用来训练时候优化模型参数，随机梯度下降法
     # optimizer = torch.optim.Adam(model.parameters(), lr=1e-3,weight_decay=0.001)  # 初始学习率
-    optimizer = torch.optim.RAdam(model.parameters(),lr=1e-3,weight_decay=0.0001)  # 初始学习率
+    optimizer = torch.optim.RAdam(model.parameters(),lr=5e-5,weight_decay=0.0001)  # 初始学习率
     exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.9)#按批次减小学习率
 
 
-   
+
 
     # Initializing in a separate cell so we can easily add more epochs to the same run
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    writer = SummaryWriter('runs/egg_rest50_trainer_{}'.format(timestamp))
-    
+    write_name='runs/egg_'+model_name+'_{}'.format(timestamp)
+    # writer = SummaryWriter('runs/egg_rest50_trainer_{}'.format(timestamp))
+    writer = SummaryWriter(write_name)
     epoch_number = 0
 
-    EPOCHS = 80
+    EPOCHS = 20
 
-    best_vloss = 1_000_000.
+    best_vloss = 2.0
+
+    torch.cuda.empty_cache()#清理cuda缓存
+
 
     for epoch in range(EPOCHS):
         print('EPOCH {}:'.format(epoch_number + 1))
@@ -390,7 +403,7 @@ if __name__=='__main__':
         time_end = time.time()
         print(f"train time: {(time_end-time_start)}")
         lr=optimizer.state_dict()['param_groups'][0]['lr']
-        if lr>0.0001: 
+        if lr>0.00001: 
             exp_lr_scheduler.step()
 
         # We don't need gradients on to do reporting
@@ -456,16 +469,18 @@ if __name__=='__main__':
             #baocun
             modelbest=model
             modelbest.eval()
-            torch.save(modelbest.state_dict(),'best.pth')
+            torch.save(modelbest.state_dict(),model_name+'_best0708.pth')
 
 
         epoch_number += 1
+        torch.cuda.empty_cache()#清理cuda缓存
     
     
     print("Done!")
 
     # 保存训练好的模型
-    model_path='jidan_rest50_last.pth'
+    # model_path='jidan_rest50_last.pth'
+    # model_path='jidan_efficent4_last.pth'
     # torch.save(model.state_dict(), "model.pth")
     model.eval()
     torch.save(model.state_dict(),model_path)

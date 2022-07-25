@@ -27,7 +27,7 @@ class LoadData(Dataset):
     def __init__(self, txt_path, train_flag=True):
         self.imgs_info = self.get_images(txt_path)
         self.train_flag = train_flag
-        self.img_size=640
+        self.img_size=664
 
         self.train_tf = transforms.Compose([
                 transforms.RandomRotation(2,center=(0,0),expand=True),
@@ -77,6 +77,11 @@ class LoadData(Dataset):
 
     def __len__(self):
         return len(self.imgs_info)
+
+    def get_height_and_width(self, idx):
+        data_height = self.img_size
+        data_width = self.img_size
+        return data_height, data_width
 
 
 if __name__ == "__main__":
