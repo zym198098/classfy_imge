@@ -16,6 +16,8 @@ flower_data
 *.mapping
 *.csv
 checkpoint
-data
+dataset
 runs
+build
+dist
 

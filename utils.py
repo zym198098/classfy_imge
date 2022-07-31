@@ -24,10 +24,10 @@ transform_BZ= transforms.Normalize(
 
 
 class LoadData(Dataset):
-    def __init__(self, txt_path, train_flag=True):
+    def __init__(self, txt_path, train_flag=True,img_size=664):
         self.imgs_info = self.get_images(txt_path)
         self.train_flag = train_flag
-        self.img_size=664
+        self.img_size=img_size
 
         self.train_tf = transforms.Compose([
                 transforms.RandomRotation(2,center=(0,0),expand=True),
