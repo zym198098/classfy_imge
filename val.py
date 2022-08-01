@@ -42,21 +42,21 @@ def padding_black( img):#如果尺寸太小可以扩充
         img = img_bg
         return img
 if __name__=='__main__':
-    classname={0: '有精蛋', 1: '反蛋', 2: '空位蛋', 3: '臭蛋', 4: '无精蛋'}
+    classname={0: '反蛋', 1: '无精蛋', 2: '有精蛋', 3: '空位蛋', 4: '臭蛋'}
         # 如果显卡可用，则用显卡进行训练
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Using {device} device")
     # model=models.efficientnet_b4(pretrained=False,num_classes=5)
-    model=models.resnet50(pretrained=False,num_classes=6)
-    model.load_state_dict(torch.load("jidan_restnet50_best0708.pth"))
+    model=models.resnet50(pretrained=False,num_classes=5)
+    model.load_state_dict(torch.load("restnet50_best.pth"))
     # print(model)
-    # model.eval()
+    model.eval()
     model.to(device)
   
     # model = torch.load("jidan_efficent4_best.pth").to(device)
     
     val_tf  = transforms.Compose([
-                transforms.Resize(664),#将图片压缩成224*224的大小
+                transforms.Resize((224,224)),#将图片压缩成224*224的大小
                 # transforms.RandomHorizontalFlip(),#对图片进行随机的水平翻转
                 # transforms.RandomVerticalFlip(),#随机的垂直翻转
                 transforms.ToTensor(),#把图片改为Tensor格式
@@ -66,13 +66,13 @@ if __name__=='__main__':
     # model.eval()
     # print(model)
 
-    img = Image.open("./pics/egg_fd.jpg")#打开图片
+    img = Image.open("./pics/egg_kw.jpg")#打开图片
     img = img.convert('RGB')#转换为RGB 格式
-    img = padding_black(img)
+    # img = padding_black(img)
     img =val_tf(img)
 
     print(img.shape)
-    img1=torch.reshape(img,(1,3,664,664))
+    img1=torch.reshape(img,(1,3,224,224))
     img1=img1.to(device)
     with torch.no_grad():
         time_start=time.time()
@@ -84,8 +84,8 @@ if __name__=='__main__':
         result=torch.softmax(pred[0],0)
         result.max()
         print(result)
-        num=torch.argmax(result).item()+1
-        print("class name}:",classname[num],"Score:",result[num-1].item())
+        num=torch.argmax(result).item()
+        print("class name :",classname[num],"Score:",result[num].item())
   
         
     # plt.show(img)

@@ -9,7 +9,15 @@ pip install PyQt5-tools
 ```
 pip install PyQt5-stubs
 ```
-
+## 使用
+1. 选择分类图片目录
+2. 选择模型
+3. 选择训练批次
+4. 选择验证批次
+5. 选择学习率
+6. 选择epochs
+7. 开始训练，从头训练 要删除 当前目录下的 _best.pth 否则会从_best.pth 保存的权重开始训练
+8. 继续前次训练；如果更目录下有 _best.pth,程序自动从_best.pth训练 
 ## pre_process_img.py 
 按文件夹名称分类，一个文件架名称为一个类。将该文件夹下的所有文件，归到一个类别。
 ## 打包程序

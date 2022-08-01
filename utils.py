@@ -27,7 +27,7 @@ class LoadData(Dataset):
     def __init__(self, txt_path, train_flag=True,img_size=664):
         self.imgs_info = self.get_images(txt_path)
         self.train_flag = train_flag
-        self.img_size=img_size
+        self.img_size=(img_size,img_size)
 
         self.train_tf = transforms.Compose([
                 transforms.RandomRotation(2,center=(0,0),expand=True),
@@ -36,12 +36,12 @@ class LoadData(Dataset):
                 # transforms.RandomVerticalFlip(),#随机的垂直翻转
                 # transforms.ColorJitter(brightness=[0.3,0.5],contrast=[0.3,0.5],saturation=[0.3,0.5]),
                 transforms.ToTensor(),#把图片改为Tensor格式
-                transform_BZ#图片标准化的步骤
+                # transform_BZ#图片标准化的步骤
             ])
         self.val_tf = transforms.Compose([##简单把图片压缩了变成Tensor模式
                 transforms.Resize(self.img_size),
                 transforms.ToTensor(),
-                transform_BZ#标准化操作
+                # transform_BZ#标准化操作
             ])
 
     def get_images(self, txt_path):
@@ -66,7 +66,7 @@ class LoadData(Dataset):
         img_path, label = self.imgs_info[index]
         img = Image.open(img_path)#打开图片
         img = img.convert('RGB')#转换为RGB 格式
-        img = self.padding_black(img)
+        # img = self.padding_black(img)
         if self.train_flag:
             img = self.train_tf(img)
         else:
