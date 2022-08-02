@@ -1,4 +1,5 @@
 import os
+from pydoc import classname
 import random
 
 def create_classimage_dataset(root_dir="./data",train_ratio=0.8,train_name='train_jidan.txt',
@@ -80,7 +81,26 @@ test_name='test_jidan.txt'):
                 f.write(test_img)
         a=classnames.values()
         b=classnames.keys()
-        c=dict(zip(a,b))        
+        c=dict(zip(a,b)) 
+        with open("classnames.txt","w",encoding='UTF-8') as f:
+            for i ,value1 in c.items():
+                print(i)
+                print(value1) 
+                classs_name=str(i)+":"+str(value1)+'\n'
+                f.write(classs_name) 
+        class_names=dict()
+        with open("classnames.txt","r",encoding='UTF-8') as f:
+            while True:
+                line=f.readline()
+                line=line[:-1]
+
+                print(line)
+                if line=="":
+                    break 
+                else:
+                    class1=line.split(":")
+                    class_names[int(class1[0])]=class1[-1]
+
         return c
 if __name__=="__main__"  :
     rootdata="/home/zym/下载/egg1" 
