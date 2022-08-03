@@ -3,7 +3,7 @@ from pydoc import classname
 import random
 
 def create_classimage_dataset(root_dir="./data",train_ratio=0.8,train_name='train_jidan.txt',
-test_name='test_jidan.txt'):
+test_name='test_jidan.txt',shuffle:bool=True):
 
         imgType_list = {'jpg', 'bmp', 'png', 'jpeg'} #支持的图片文件格式   
         # 用来当测试集
@@ -44,7 +44,8 @@ test_name='test_jidan.txt'):
 
             # print(classnames)
             #打乱图片
-            random.shuffle(data_list)  
+            if shuffle:
+                random.shuffle(data_list)  
             # 按比例存放在train_liat test_list
            
             len_train=int(len(data_list)*train_ratio)
@@ -88,6 +89,31 @@ test_name='test_jidan.txt'):
                 print(value1) 
                 classs_name=str(i)+":"+str(value1)+'\n'
                 f.write(classs_name) 
+        # class_names=dict()
+        # with open("classnames.txt","r",encoding='UTF-8') as f:
+        #     while True:
+        #         line=f.readline()
+        #         line=line[:-1]
+
+        #         print(line)
+        #         if line=="":
+        #             break 
+        #         else:
+        #             class1=line.split(":")
+        #             class_names[int(class1[0])]=class1[-1]
+
+        return c
+      
+def read_classnames(classnames_dir:str)->dict():
+        r"""
+        根据classnames.txt 返回类名字典
+        txt格式如下，一行一个类别
+        0:有精蛋
+        1:臭蛋
+        注意 “:" 为英文字符
+
+
+        """
         class_names=dict()
         with open("classnames.txt","r",encoding='UTF-8') as f:
             while True:
@@ -100,8 +126,26 @@ test_name='test_jidan.txt'):
                 else:
                     class1=line.split(":")
                     class_names[int(class1[0])]=class1[-1]
+        return class_names
 
-        return c
 if __name__=="__main__"  :
+    import torchvision.models as models
+    import torch
+    device='cpu'
+    if torch.cuda.is_available():
+            device="cuda:0"
+    input=torch.randn(1,3,448,448).to(device)
+    print(input) 
+    model=models.densenet121(pretrained=False,num_classes=5)
+    print(model)
+    model=model.to(device)
+    output=model(input)
+    print(output)
+    model1=models.densenet121(pretrained=False,num_classes=5)
+    model2=models.regnet_x_32gf(pretrained=False,num_classes=5)
+    
+    print(model1)
+    print(model2)
+
     rootdata="/home/zym/下载/egg1" 
     create_classimage_dataset(rootdata)

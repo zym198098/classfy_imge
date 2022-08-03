@@ -99,6 +99,8 @@ class MyThread(QThread):
                 self.lr=self.train_params.get('lr')
         if "model_name" in self.train_params:
             self.model_name=self.train_params.get('model_name')
+        if "amp" in self.train_params:
+            self.amp=self.train_params.get('amp')
         self.btn_train_cleck()
     #根据index 生成模型     
     def get_model(self):
@@ -111,9 +113,19 @@ class MyThread(QThread):
                 model=models.resnet152(pretrained=False,num_classes=self.class_size)
         elif model_index==3:
                 model=models.efficientnet_b4(pretrained=False,num_classes=self.class_size)
+        elif model_index==4:
+                model=models.densenet121(pretrained=False,num_classes=self.class_size)
+            # densenet161
+        elif model_index==5:
+                model=models.densenet161(pretrained=False,num_classes=self.class_size)    
+        elif model_index==6:
+                model=models.regnet_x_32gf(pretrained=False,num_classes=self.class_size)
+        elif model_index==7:
+                model=models.vision_transformer.vit_b_32(pretrained=False,image_size=self.img_size,num_classes=self.class_size)
+                
         return model
     #train 函数
-    def train_one_epoch(self,training_loader,model,epoch_index, tb_writer, loss_fn, optimizer,device="cpu"):
+    def train_one_epoch(self,training_loader,model,epoch_index, tb_writer, loss_fn, optimizer,device="cpu",scaler=None):
         running_loss = 0.
         last_loss = 0.
         arc=0.
@@ -128,19 +140,30 @@ class MyThread(QThread):
             # Every data instance is an input + label pair
             inputs, labels = data
             inputs,labels=inputs.to(device),labels.to(device)
+            
 
             # Zero your gradients for every batch!
             optimizer.zero_grad()
+            with torch.cuda.amp.autocast(enabled=scaler is not None):
+                 # Make predictions for this batch
+                outputs = model(inputs)
+                loss = loss_fn(outputs, labels)
 
-            # Make predictions for this batch
-            outputs = model(inputs)
+           
 
             # Compute the loss and its gradients
-            loss = loss_fn(outputs, labels)
-            loss.backward()
+            
+            if scaler is not None:
+                scaler.scale(loss).backward()
+                scaler.step(optimizer)
+                scaler.update()
+            else:
+                loss.backward()
+                optimizer.step()
+            # loss.backward()
 
-            # Adjust learning weights
-            optimizer.step()
+            # # Adjust learning weights
+            # optimizer.step()
             # 统计分类情况
             _, predicted = torch.max(outputs.data, 1)
             total += labels.size(0)
@@ -236,7 +259,7 @@ class MyThread(QThread):
             # 保存训练好的模型
             # model_path='jidan_rest50_last.pth'
             # model_name='jidan_efficent4'
-            model_name=self.model_name
+            model_name=self.model_name+"_"+str(self.img_size)
             model_path=model_name+'_last.pth' 
             #从最好的模型开始训练
             if os.path.exists((model_name+'_best.pth')):
@@ -261,9 +284,13 @@ class MyThread(QThread):
             epoch_number = 0
             EPOCHS = self.epochs
             best_vloss = 2.0
+            
+            scaler=torch.cuda.amp.GradScaler()
+            
             torch.cuda.empty_cache()#清理cuda缓存
             train_text='modle:'+self.model_name+';'+ 'lr:'+str(self.lr)+';train_benchsize:'+str(self.train_bench_size)
             self.printtext.emit(train_text)
+
             for epoch in range(self.epochs):
                 print('EPOCH {}:'.format(epoch_number + 1))
                 print("___lr:" ,optimizer.state_dict()['param_groups'][0]['lr'] )
@@ -275,11 +302,20 @@ class MyThread(QThread):
                 # Make sure gradient tracking is on, and do a pass over the data
                 model.train(True)
                 time_start = time.time()
-                avg_loss ,arc= self.train_one_epoch(train_dataloader,model,epoch_number, writer, loss_fn, optimizer,device)
+                if self.train_params["amp"]:
+                    #混合精度训练
+                    avg_loss ,arc= self.train_one_epoch(train_dataloader,model,epoch_number, writer, loss_fn, optimizer,device,scaler=scaler)
+                else:
+                    #正常精度训练
+                    avg_loss ,arc= self.train_one_epoch(train_dataloader,model,epoch_number, writer, loss_fn, optimizer,device,scaler=None)
                 time_end = time.time()
                 print(f"train time: {(time_end-time_start)}")
                 train_text=f"train time: {str(time_end-time_start)}"
                 self.printtext.emit(train_text)
+                if avg_loss<0.001:
+                    train_text=f"avg_loss: {str(avg_loss)}"+"training exit"
+                    self.printtext.emit(train_text)
+                    sys.exit(1)
                 lr=optimizer.state_dict()['param_groups'][0]['lr']
                 if lr>0.00001: 
                     exp_lr_scheduler.step()
@@ -625,18 +661,19 @@ class mywindow(QtWidgets.QWidget,Ui_UI):
         self.train_params["img_size"]=self.img_size.value()#训练图片缩放大小
         self.train_params["lr"]=self.lr.value()#学习率
         self.train_params["model_name"]=self.comb_model.currentText()#模型名称
+        self.train_params["amp"]=self.checkBox_amp.isChecked()#是否混合精度训练
     def btn_picdir_cleck(self):
                 
                 self.picsdir= QFileDialog.getExistingDirectory()
                 self.lineEdit_picdir.setText( self.picsdir)
-    def btn_trainT_cleck(self):
+    # def btn_trainT_cleck(self):
                 
-                self.t_text= QFileDialog.getOpenFileName()
-                self.lineEdit_traintext.setText( self.t_text[0])
-    def btn_valT_cleck(self):
+    #             self.t_text= QFileDialog.getOpenFileName()
+    #             self.lineEdit_traintext.setText( self.t_text[0])
+    # def btn_valT_cleck(self):
                 
-                self.v_text= QFileDialog.getOpenFileName()
-                self.lineEdit_valtext.setText( self.v_text[0])
+    #             self.v_text= QFileDialog.getOpenFileName()
+    #             self.lineEdit_valtext.setText( self.v_text[0])
     def get_model(self):
         model_index=self.comb_model.currentIndex()
         if model_index==0:
@@ -662,8 +699,8 @@ class mywindow(QtWidgets.QWidget,Ui_UI):
 
     def init_ui(self):        
                 self.btn_picsdir.clicked.connect(self.btn_picdir_cleck)
-                self.btn_traintext.clicked.connect(self.btn_trainT_cleck)
-                self.btn_valtext.clicked.connect(self.btn_valT_cleck)
+                # self.btn_traintext.clicked.connect(self.btn_trainT_cleck)
+                # self.btn_valtext.clicked.connect(self.btn_valT_cleck)
                 self.btn_train.clicked.connect(self.woker)
                 self.worker.printtext.connect(self.print_messge)
                 

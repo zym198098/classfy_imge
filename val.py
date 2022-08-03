@@ -16,6 +16,7 @@ from torchvision.io import read_image
 import torchvision.transforms as transforms
 import torchvision.models as models
 import time
+import os
 def get_ResNet(classes,pretrained=True,loadfile = None):
     ResNet=resnet101(pretrained)# 这里自动下载官方的预训练模型
     if loadfile!= None:
@@ -42,13 +43,13 @@ def padding_black( img):#如果尺寸太小可以扩充
         img = img_bg
         return img
 if __name__=='__main__':
-    classname={0: '反蛋', 1: '无精蛋', 2: '有精蛋', 3: '空位蛋', 4: '臭蛋'}
+    classname={0: '有精蛋', 1: '反蛋', 2: '空位蛋', 3: '臭蛋', 4: '无精蛋'}
         # 如果显卡可用，则用显卡进行训练
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Using {device} device")
     # model=models.efficientnet_b4(pretrained=False,num_classes=5)
     model=models.resnet50(pretrained=False,num_classes=5)
-    model.load_state_dict(torch.load("restnet50_best.pth"))
+    model.load_state_dict(torch.load("restnet50_224_best.pth"))
     # print(model)
     model.eval()
     model.to(device)
@@ -65,27 +66,67 @@ if __name__=='__main__':
        # 将模型转为验证模式
     # model.eval()
     # print(model)
+    imgType_list = {'jpg', 'bmp', 'png', 'jpeg'} #支持的图片文件格式   
+        # 用来当测试集
+   
+        
+    sub_dir="反蛋"    
+    root_dir="/home/zym/下载/egg1/"+sub_dir
+    
+    for dir,folder,file in os.walk(root_dir):
+            print(dir)
+            print(folder)
+      
+            file_pic=[]
+            data_list = []
+            crroct=[]
+            erro=[]
+            pic_num=0
+            for i in range(len(file)):
+                 jpg=file[i].split(".")[-1]
+                 if jpg in imgType_list:
+                        pic_path=os.path.join(dir,file[i])
+                        # file_pic.append(pic_path)
+                        pic_num=pic_num+1
+                        print(pic_num)
 
-    img = Image.open("./pics/egg_kw.jpg")#打开图片
-    img = img.convert('RGB')#转换为RGB 格式
-    # img = padding_black(img)
-    img =val_tf(img)
+                        img = Image.open(pic_path)#打开图片
+                        img = img.convert('RGB')#转换为RGB 格式
+                        # img = padding_black(img)
+                        img =val_tf(img)
 
-    print(img.shape)
-    img1=torch.reshape(img,(1,3,224,224))
-    img1=img1.to(device)
-    with torch.no_grad():
-        time_start=time.time()
-        pred = model(img1)
-        time_end=time.time()
-        print("time pred:",time_end-time_start)
-        # pred.to("cpu")
-        # print(pred.shape)
-        result=torch.softmax(pred[0],0)
-        result.max()
-        print(result)
-        num=torch.argmax(result).item()
-        print("class name :",classname[num],"Score:",result[num].item())
+                        # print(img.shape)
+                        img1=torch.reshape(img,(1,3,224,224))
+                        img1=img1.to(device)
+                        with torch.no_grad():
+                            time_start=time.time()
+                            pred = model(img1)
+                            time_end=time.time()
+                            # print("time pred:",time_end-time_start)
+                            # pred.to("cpu")
+                            # print(pred.shape)
+                            result=torch.softmax(pred[0],0)
+                            result.max()
+                            # print(result)
+                            num=torch.argmax(result).item()
+                            # print("class name :",classname[num],"Score:",result[num].item())
+                            if classname[num]==sub_dir:
+                                crroct.append(pic_path)
+                            else:
+                                erro.append(pic_path)
+            print("class ture:",len(crroct))
+            print("class false:",len(erro))
+            sum=len(crroct)+len(erro)
+            arc=len(crroct)/sum
+            print("arc",arc)
+            print("time pred:",time_end-time_start)
+            file_erro='erro_'+sub_dir+'.txt'
+            with open(file_erro,"w",encoding='UTF-8') as f:
+                for train_img in erro:
+                    f.write(str(train_img)+"\n")
+                f.write("corect num:"+str(len(crroct))+";erro num:"+str(len(erro))+";arc:"+str(arc))
+
+
   
         
     # plt.show(img)

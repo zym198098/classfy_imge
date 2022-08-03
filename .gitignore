@@ -15,6 +15,7 @@ flower_data
 *.bin
 *.mapping
 *.csv
+*.txt
 checkpoint
 dataset
 runs

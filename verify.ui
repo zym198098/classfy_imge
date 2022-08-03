@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Form_verify</class>
+ <widget class="QWidget" name="Form_verify">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>939</width>
+    <height>683</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <layout class="QGridLayout" name="gridLayout">
+     <item row="0" column="1">
+      <widget class="QComboBox" name="comb_modeltype">
+       <item>
+        <property name="text">
+         <string>restnet50</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>restnet101</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>restnet152</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>effection4</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+     <item row="0" column="3">
+      <widget class="QLineEdit" name="lineEdit_modelpath">
+       <property name="text">
+        <string>best.pth</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="5">
+      <widget class="QLineEdit" name="lineEdit_classnames">
+       <property name="text">
+        <string>classnames.txt</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="3">
+      <widget class="QSpinBox" name="verify_bench_size">
+       <property name="minimum">
+        <number>1</number>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="0">
+      <widget class="QPushButton" name="btn_picdir">
+       <property name="text">
+        <string>图片路径</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="4">
+      <widget class="QPushButton" name="btn_classnames">
+       <property name="text">
+        <string>类别名称文件</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1">
+      <widget class="QLineEdit" name="lineEdit_picdir"/>
+     </item>
+     <item row="0" column="2">
+      <widget class="QPushButton" name="btn_modelpath">
+       <property name="text">
+        <string>模型文件路径</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="0">
+      <widget class="QLabel" name="label">
+       <property name="text">
+        <string>模型类别</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="2">
+      <widget class="QLabel" name="label_2">
+       <property name="text">
+        <string>验证批次</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="0" colspan="6">
+      <widget class="QPushButton" name="btn_verify">
+       <property name="text">
+        <string>验证</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QTextBrowser" name="textBrowser"/>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
