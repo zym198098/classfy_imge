@@ -18,6 +18,11 @@ class Ui_UI(object):
         if not UI.objectName():
             UI.setObjectName(u"UI")
         UI.resize(1144, 651)
+        sizePolicy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(UI.sizePolicy().hasHeightForWidth())
+        UI.setSizePolicy(sizePolicy)
         self.horizontalLayout = QHBoxLayout(UI)
         self.horizontalLayout.setObjectName(u"horizontalLayout")
         self.verticalLayout = QVBoxLayout()

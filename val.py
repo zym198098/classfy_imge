@@ -43,13 +43,26 @@ def padding_black( img):#如果尺寸太小可以扩充
         img = img_bg
         return img
 if __name__=='__main__':
-    classname={0: '有精蛋', 1: '反蛋', 2: '空位蛋', 3: '臭蛋', 4: '无精蛋'}
+
+    # classname={0: '有精蛋', 1: '反蛋', 2: '空位蛋', 3: '臭蛋', 4: '无精蛋'}
+    classname=dict()
+    with open("classnames.txt","r",encoding='UTF-8') as f:
+            while True:
+                line=f.readline()
+                line=line[:-1]
+
+                print(line)
+                if line=="":
+                    break 
+                else:
+                    class1=line.split(":")
+                    classname[int(class1[0])]=class1[-1]
         # 如果显卡可用，则用显卡进行训练
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Using {device} device")
     # model=models.efficientnet_b4(pretrained=False,num_classes=5)
-    model=models.resnet50(pretrained=False,num_classes=5)
-    model.load_state_dict(torch.load("restnet50_224_best.pth"))
+    model=models.densenet121(pretrained=False,num_classes=len(classname))
+    model.load_state_dict(torch.load("densenet121_224_best.pth"))
     # print(model)
     model.eval()
     model.to(device)
