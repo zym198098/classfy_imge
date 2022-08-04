@@ -41,6 +41,8 @@ def padding_black( img):#如果尺寸太小可以扩充
         img = img_bg
         return img
 if __name__=='__main__':
+   
+
     classname=walk.create_classimage_dataset("/home/zym/下载/egg1",0.99,train_name="verfy1.txt",test_name="verfy2.txt",shuffle=False)
     print(classname)
     # classname={0: '反蛋', 1: '无精蛋', 2: '有精蛋', 3: '空位蛋', 4: '臭蛋'}
@@ -65,6 +67,10 @@ if __name__=='__main__':
             ])
     test_data=utils.LoadData("verfy1.txt",train_flag=False,img_size=224)
     test_dataloader=DataLoader(test_data,batch_size=48,num_workers=3,pin_memory=True)
+    print_step=len(test_dataloader)/20
+    print_step=max(int(print_step),1)
+    # train_text='  train number {} loss: {}'.format( test_dataloader.batch_size, print_step)
+    
     loss_fn = nn.CrossEntropyLoss()
     running_vloss = 0.0
     time_startv = time.time()
@@ -83,16 +89,16 @@ if __name__=='__main__':
                         voutputs = model(vinputs)
                         _, predicted = torch.max(voutputs, 1)
                         c = (predicted == vlabels).squeeze()#每一个batch的(predicted==labels)
-                        for i in range(len(vinputs)):#4是每一个batch的个数
-                            label = vlabels[i]
-                            class_correct[label] += c[i].item()
+                        for j in range(len(vinputs)):#4是每一个batch的个数
+                            label = vlabels[j]
+                            class_correct[label] += c[j].item()
                             class_total[label] += 1
 
                         vloss = loss_fn(voutputs, vlabels)
                         running_vloss += vloss
                         vloss_sum+=1
                         correct += (voutputs.argmax(1) == vlabels).type(torch.float).sum().item()
-                        if (int(correct/size)*100)%10==0:
+                        if (i%print_step)==0:
                             print(f"correct:{correct},/{size}")
                             # train_text=f"correct:{correct},/{size}"
                             # self.printtext.emit(train_text)

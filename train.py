@@ -125,7 +125,7 @@ class MyThread(QThread):
                 
         return model
     #train 函数
-    def train_one_epoch(self,training_loader,model,epoch_index, tb_writer, loss_fn, optimizer,device="cpu",scaler=None):
+    def train_one_epoch(self,training_loader:DataLoader,model,epoch_index, tb_writer, loss_fn, optimizer,device="cpu",scaler=None):
         running_loss = 0.
         last_loss = 0.
         arc=0.
@@ -136,6 +136,7 @@ class MyThread(QThread):
         # Here, we use enumerate(training_loader) instead of
         # iter(training_loader) so that we can track the batch
         # index and do some intra-epoch reporting
+        print_step=len(training_loader)/50
         for i, data in enumerate(training_loader):
             # Every data instance is an input + label pair
             inputs, labels = data
@@ -174,7 +175,7 @@ class MyThread(QThread):
             if i % 100 == 99:
                 last_loss = running_loss / 100 # loss per batch
                 print('  batch {} loss: {}'.format(i + 1, last_loss))
-                train_text='  batch {} loss: {}'.format(i + 1, last_loss)
+                train_text='  train size {} loss: {}'.format((i + 1)*training_loader.batch_size, last_loss)
                 self.printtext.emit(train_text)
                 tb_x = epoch_index * len(training_loader) + i + 1
                 tb_writer.add_scalar('Loss/train', last_loss, tb_x)
@@ -183,7 +184,7 @@ class MyThread(QThread):
         # print(f"traning accuracy:{arc:>3f}")
         # writer.add_scalars("Accuracy", {"Train": arc}, 1)
 
-        return last_loss ,arc
+        return loss ,arc
  #训练函数
     def btn_train_cleck(self):
             platform=sys.platform
@@ -367,7 +368,8 @@ class MyThread(QThread):
 
                 avg_vloss = running_vloss / vloss_sum
                 print('LOSS train {} LOSS valid {} train arc {} vaild arc {}'.format(avg_loss, avg_vloss,arc*100,correct*100))
-                train_text='LOSS train: '+str(avg_loss)+'LOSS valid :'+str(avg_vloss)+ 'train arc:'+ str(arc*100)+'vaild arc :'+ str(correct*100)
+                train_text=f'LOSS train {avg_loss} LOSS valid {avg_vloss} train arc {arc} vaild arc {correct}'
+                # train_text='LOSS train: '+str(avg_loss)+'LOSS valid :'+str(avg_vloss)+ 'train arc:'+ str(arc*100)+'vaild arc :'+ str(correct*100)
                 self.printtext.emit(train_text)
                 time_endv = time.time()
                 print(f"test time: {(time_endv-time_startv)}")
