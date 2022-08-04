@@ -20,6 +20,14 @@ pip install PyQt5-stubs
 8. 继续前次训练；如果更目录下有 _best.pth,程序自动从_best.pth训练 
 ## pre_process_img.py 
 按文件夹名称分类，一个文件架名称为一个类。将该文件夹下的所有文件，归到一个类别。
+## walk.py 
+目录测试
+## train.py
+训练主程序。在run目录下保存tensorborad 训练记录文件.训练完成保存:best.pth 、last.pth、*.onnx三个文件。best.pth文件保存了训练权重可用于迁移学学习继续训练。onnx 为动态benchsize。模型命名规则(best为例）：modelname_imgsize_best.pth
+## verify.py
+批量测试模型，泛化能力。
+## val.py 
+测试单个类别分类效果。如将目录定位到“臭蛋“，运行后会将模型推理结果不为”臭蛋“的图片保存在”erro_classs/臭蛋/错误分类名/**.jpg"目录下，同时保存erro_臭蛋.txt文件
 ## 打包程序
 ### 安装pyinstaller
 首先安装pyinstaller，使用安装命令：pip install pyinstaller；

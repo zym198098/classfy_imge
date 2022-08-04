@@ -1,3 +1,5 @@
+from copy import copy
+from importlib.resources import path
 from pickle import TRUE
 import time
 from matplotlib import image
@@ -17,6 +19,7 @@ import torchvision.transforms as transforms
 import torchvision.models as models
 import time
 import os
+import shutil
 def get_ResNet(classes,pretrained=True,loadfile = None):
     ResNet=resnet101(pretrained)# 这里自动下载官方的预训练模型
     if loadfile!= None:
@@ -83,9 +86,16 @@ if __name__=='__main__':
         # 用来当测试集
    
         
-    sub_dir="反蛋"    
+    sub_dir="臭蛋"    
     root_dir="/home/zym/下载/egg1/"+sub_dir
-    
+    if os.path.exists("erro_class")==False:
+        os.mkdir("erro_class")
+    for i,names in classname.items():
+        if os.path.exists("erro_class/"+str(names)):
+            pass
+        else:
+            os.mkdir("erro_class/"+str(names))
+
     for dir,folder,file in os.walk(root_dir):
             print(dir)
             print(folder)
@@ -123,9 +133,15 @@ if __name__=='__main__':
                             # print(result)
                             num=torch.argmax(result).item()
                             # print("class name :",classname[num],"Score:",result[num].item())
-                            if classname[num]==sub_dir:
+                            if classname[num]==sub_dir:#分类正确
                                 crroct.append(pic_path)
-                            else:
+                            else:#分类错误
+                                path1="erro_class/"+str(sub_dir)#原分类
+                                path=os.path.join(path1,classname[num])#原分类错误分类名称
+                                if os.path.exists(path)==False:
+                                    os.mkdir(path)
+                                shutil.copy(pic_path,path)
+
                                 erro.append(pic_path)
             print("class ture:",len(crroct))
             print("class false:",len(erro))
