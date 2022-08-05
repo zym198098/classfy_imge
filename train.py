@@ -554,7 +554,13 @@ test_name='test_jidan.txt'):
                 f.write(test_img)
         a=classnames.values()
         b=classnames.keys()
-        c=dict(zip(a,b))        
+        c=dict(zip(a,b))
+        with open("classnames.txt","w",encoding='UTF-8') as f:
+            for i ,value1 in c.items():
+                print(i)
+                print(value1) 
+                classs_name=str(i)+":"+str(value1)+'\n'
+                f.write(classs_name)        
         return c 
 
         
