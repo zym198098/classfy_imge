@@ -125,7 +125,7 @@ class MyThread(QThread):
                 model=models.regnet_x_32gf(pretrained=False,num_classes=self.class_size)
         elif model_index==7:
                 model=models.vision_transformer.vit_b_32(pretrained=False,image_size=self.img_size,num_classes=self.class_size)
-        # 8 efficientnet_v2_m
+        # 8 efficientnet_v2_m pytorch 1.12
         elif model_index==8:
                 model=models.efficientnet_v2_m(pretrained=False,image_size=self.img_size,num_classes=self.class_size)
                 
