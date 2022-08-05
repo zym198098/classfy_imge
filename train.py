@@ -4,6 +4,7 @@
 from concurrent.futures import thread
 # from pickle import TRUE
 import time
+from sqlalchemy import false
 # from matplotlib.pyplot import text
 import torch
 from torch import dropout, nn
@@ -30,6 +31,7 @@ from PyQt5.QtCore import QThread
 # from PyQt5.QtGui import *
 from PyQt5.QtWidgets import QWidget,QFileDialog
 from PyQt5.QtCore import pyqtSignal 
+from PyQt5.QtWidgets import QComboBox
 from Ui_train import Ui_UI
 
 import sys
@@ -37,8 +39,9 @@ import sys
 from collections import OrderedDict
 import torch.onnx 
 import onnx
-
-
+import torchvision
+import torch.torch_version as version
+import torchvision.version as tversion
 
 
 class MyThread(QThread):
@@ -122,6 +125,9 @@ class MyThread(QThread):
                 model=models.regnet_x_32gf(pretrained=False,num_classes=self.class_size)
         elif model_index==7:
                 model=models.vision_transformer.vit_b_32(pretrained=False,image_size=self.img_size,num_classes=self.class_size)
+        # 8 efficientnet_v2_m
+        elif model_index==8:
+                model=models.efficientnet_v2_m(pretrained=False,image_size=self.img_size,num_classes=self.class_size)
                 
         return model
     #train 函数
@@ -184,7 +190,7 @@ class MyThread(QThread):
         # print(f"traning accuracy:{arc:>3f}")
         # writer.add_scalars("Accuracy", {"Train": arc}, 1)
 
-        return loss ,arc
+        return last_loss ,arc
  #训练函数
     def btn_train_cleck(self):
             platform=sys.platform
@@ -648,11 +654,20 @@ class mywindow(QtWidgets.QWidget,Ui_UI):
         # self.model=models.resnet50(pretrained=False,num_classes=self.class_size)
         self.train_params={}
         self.setupUi(self)
-        
+        self.add_comb_models()
         self.worker=MyThread(self.train_params)
         self.init_ui()
+    def add_comb_models(self):
+            torch_ver=torch.__version__
+            torch_ver_g=False#检查版本号是否大于1.11.0    
+            ver=version.TorchVersion(torch_ver)
+            if ver>(1.11,0):
+                torch_ver_g=True
+            if torch_ver_g:
+                self.comb_model.addItem("efficientnet_v2_m")
   
     def train_params_init(self):
+        
         self.train_params["train_bench_size"]=self.train_benchsize.value()
         self.train_params["val_bench_size"]=self.val_benchsize.value()
         self.train_params["pic_dir"]=self.lineEdit_picdir.text()
@@ -708,6 +723,7 @@ class mywindow(QtWidgets.QWidget,Ui_UI):
                 
                 
 if __name__=='__main__':
+
     app = QtWidgets.QApplication(sys.argv)
     window = mywindow()
     window.show()

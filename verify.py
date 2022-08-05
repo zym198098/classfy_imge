@@ -50,8 +50,8 @@ if __name__=='__main__':
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Using {device} device")
     # model=models.efficientnet_b4(pretrained=False,num_classes=5)
-    model=models.densenet121(pretrained=False,num_classes=len(classname))
-    model.load_state_dict(torch.load("densenet121_224_best.pth"))
+    model=models.efficientnet_v2_m(pretrained=False,num_classes=len(classname))
+    model.load_state_dict(torch.load("efficientnet_v2_m_224_best.pth"))
     # print(model)
     model.eval()
     model.to(device)
