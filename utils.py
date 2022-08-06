@@ -16,10 +16,10 @@ transform_BZ= transforms.Normalize(
     # std=[0.229, 0.224, 0.225]
 #     [-0.0060067656, -0.006891677, -0.007734876]
 # [0.009368785, 0.009223793, 0.009070563]
-    # mean=[0.5, 0.5, 0.5],# 标准化参数
-    # std=[0.5, 0.5, 0.5]
-    mean=[-0.0060067656, -0.006891677, -0.007734876],# 标准化参数
-    std=[0.009368785, 0.009223793, 0.009070563]
+    mean=[0.5, 0.5, 0.5],# 标准化参数
+    std=[0.5, 0.5, 0.5]
+    # mean=[-0.0060067656, -0.006891677, -0.007734876],# 标准化参数
+    # std=[0.009368785, 0.009223793, 0.009070563]
 )
 
 
@@ -33,17 +33,17 @@ class LoadData(Dataset):
                 transforms.RandomRotation(2,center=(0,0),expand=True),
                 transforms.Resize(self.img_size),#将图片压缩成224*224的大小
                 # transforms.RandomHorizontalFlip(),#对图片进行随机的水平翻转
-                # transforms.RandomVerticalFlip(),#随机的垂直翻转
+                transforms.RandomVerticalFlip(),#随机的垂直翻转
                 # transforms.ColorJitter(brightness=[0.3,0.5],contrast=[0.3,0.5],saturation=[0.3,0.5]),
                 transforms.ColorJitter(contrast=[1.2,1.3]),
                 transforms.ToTensor(),#把图片改为Tensor格式
-                # transform_BZ#图片标准化的步骤
+                transform_BZ#图片标准化的步骤
             ])
         self.val_tf = transforms.Compose([##简单把图片压缩了变成Tensor模式
                 transforms.Resize(self.img_size),
                 # transforms.ColorJitter(contrast=[1.2,1.3]),
                 transforms.ToTensor(),
-                # transform_BZ#标准化操作
+                transform_BZ#标准化操作
             ])
 
     def get_images(self, txt_path):

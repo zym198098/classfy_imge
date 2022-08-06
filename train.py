@@ -128,6 +128,8 @@ class MyThread(QThread):
         # 8 efficientnet_v2_m pytorch 1.12
         elif model_index==8:
                 model=models.efficientnet_v2_m(pretrained=False,image_size=self.img_size,num_classes=self.class_size)
+        elif model_index==9:
+                model=models.efficientnet_v2_l(pretrained=False,image_size=self.img_size,num_classes=self.class_size)
                 
         return model
     #train 函数
@@ -671,6 +673,7 @@ class mywindow(QtWidgets.QWidget,Ui_UI):
                 torch_ver_g=True
             if torch_ver_g:
                 self.comb_model.addItem("efficientnet_v2_m")
+                self.comb_model.addItem("efficientnet_v2_l")
   
     def train_params_init(self):
         
