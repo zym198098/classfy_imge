@@ -1,6 +1,7 @@
 import os
 from pydoc import classname
 import random
+import platform
 
 def create_classimage_dataset(root_dir="./data",train_ratio=0.8,train_name='train_jidan.txt',
 test_name='test_jidan.txt',shuffle:bool=True):
@@ -28,7 +29,11 @@ test_name='test_jidan.txt',shuffle:bool=True):
                         file_pic.append(file[i])
 
             for i in range(0,int(len(file_pic))):
-                dir1=dir.split('/')
+                system_name=platform.system()
+                if system_name=="Linux":
+                    dir1=dir.split('/')
+                elif system_name=="Windows":
+                    dir1=dir.split('/')
                 len1=len(classnames)
                 if dir1[-1]in classnames.keys():
                     # print(dir1[-1])
@@ -141,6 +146,7 @@ if __name__=="__main__"  :
     model=model.to(device)
     output=model(input)
     print(output)
+   
     model1=models.densenet121(pretrained=False,num_classes=5)
     model2=models.regnet_x_32gf(pretrained=False,num_classes=5)
     

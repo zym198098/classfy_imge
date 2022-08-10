@@ -58,6 +58,7 @@ class MyThread(QThread):
         self.train_percent=0.8
         self.img_size=224
         self.lr=0.01
+        self.lr_f=0
         self.train_params=train_params
         self.model_name="restnet50"
         
@@ -104,6 +105,8 @@ class MyThread(QThread):
             self.model_name=self.train_params.get('model_name')
         if "amp" in self.train_params:
             self.amp=self.train_params.get('amp')
+        if "lr_f" in self.train_params:#学习率调整方法
+            self.amp=self.train_params.get('lr_f')
         self.btn_train_cleck()
     #根据index 生成模型     
     def get_model(self):
@@ -138,8 +141,8 @@ class MyThread(QThread):
         last_loss = 0.
         arc=0.
         
-        correct = 0.
-        total = 0.
+        correct = 0
+        total = 0
 
         # Here, we use enumerate(training_loader) instead of
         # iter(training_loader) so that we can track the batch
@@ -183,12 +186,13 @@ class MyThread(QThread):
             if i % 100 == 99:
                 last_loss = running_loss / 100 # loss per batch
                 print('  batch {} loss: {}'.format(i + 1, last_loss))
-                train_text='  train size {} loss: {}'.format((i + 1)*training_loader.batch_size, last_loss)
+                train_text='  train size {}/{} loss: {}'.format((i + 1)*training_loader.batch_size,len(training_loader.dataset), last_loss)
                 self.printtext.emit(train_text)
                 tb_x = epoch_index * len(training_loader) + i + 1
                 tb_writer.add_scalar('Loss/train', last_loss, tb_x)
                 running_loss = 0.
-        arc=float(correct / total)
+        if total>0:
+            arc=float(correct / total)
         # print(f"traning accuracy:{arc:>3f}")
         # writer.add_scalars("Accuracy", {"Train": arc}, 1)
 
@@ -196,7 +200,7 @@ class MyThread(QThread):
  #训练函数
     def btn_train_cleck(self):
             platform=sys.platform
-            classes=create_classimage_dataset(root_dir=self.pic_dir,train_ratio=0.8,train_name='train.txt',
+            classes=create_classimage_dataset(root_dir=self.pic_dir,train_ratio=self.train_percent,train_name='train.txt',
         test_name='test.txt')
 
             print(classes)
@@ -229,7 +233,7 @@ class MyThread(QThread):
             train_dataloader = DataLoader(dataset=train_data, num_workers=num_work, pin_memory=True, batch_size=batch_size, shuffle=True)
             test_dataloader = DataLoader(dataset=valid_data, num_workers=num_work, pin_memory=True, batch_size=batch_size_test)
 
-            
+
             # model = alexnet(pretrained=False, num_classes=5).to(device) # 29.3%（不使用模型的预训练参数）
 
             '''        VGG 系列    '''
@@ -284,7 +288,10 @@ class MyThread(QThread):
             # optimizer = torch.optim.Adam(model.parameters(), lr=1e-3,weight_decay=0.001)  # 初始学习率
             
             optimizer = torch.optim.RAdam(model.parameters(),lr=self.lr,weight_decay=0.0001)  # 初始学习率
-            exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.9)#按批次减小学习率
+            if self.lr_f==0:
+                exp_lr_scheduler= torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=10, eta_min=0.000005, last_epoch=-1)
+            else:
+                exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.9)#按批次减小学习率
             # Initializing in a separate cell so we can easily add more epochs to the same run
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
             write_name='runs/egg_'+model_name+'_{}'.format(timestamp)
@@ -321,12 +328,13 @@ class MyThread(QThread):
                 print(f"train time: {(time_end-time_start)}")
                 train_text=f"train time: {str(time_end-time_start)}"
                 self.printtext.emit(train_text)
-                if avg_loss<0.001:
-                    train_text=f"avg_loss: {str(avg_loss)}"+"training exit"
+                if avg_loss<0.0005:
+                    train_text=f"avg_loss: {str(avg_loss)} <0.005 "+"training exit"
                     self.printtext.emit(train_text)
-                    sys.exit(1)
+                    break
+                    # sys.exit(1)
                 lr=optimizer.state_dict()['param_groups'][0]['lr']
-                if lr>0.00001: 
+                if lr>0.000001 or self.lr_f==0: 
                     exp_lr_scheduler.step()
 
                 # We don't need gradients on to do reporting
@@ -349,19 +357,26 @@ class MyThread(QThread):
                         voutputs = model(vinputs)
                         _, predicted = torch.max(voutputs, 1)
                         c = (predicted == vlabels).squeeze()#每一个batch的(predicted==labels)
-                        for i in range(len(vinputs)):#4是每一个batch的个数
-                            label = vlabels[i]
-                            class_correct[label] += c[i].item()
+                        for j in range(len(vinputs)):#4是每一个batch的个数
+                            label = vlabels[j]
+                            class_correct[label] += c[j].item()
                             class_total[label] += 1
 
                         vloss = loss_fn(voutputs, vlabels)
                         running_vloss += vloss
                         vloss_sum+=1
                         correct += (voutputs.argmax(1) == vlabels).type(torch.float).sum().item()
-                        if (int(correct/size)*100)%10==0:
+                        len_test=len(test_dataloader.dataset) /test_dataloader.batch_size 
+                        print_epoch=int(len_test/5)
+                        if (i%print_epoch)==(print_epoch-1):                   
+                        # if (int(correct/size)*100)%10==0:
+                            
                             print(f"correct:{correct},/{size}")
                             train_text=f"correct:{correct},/{size}"
                             self.printtext.emit(train_text)
+                print(f"correct:{correct},/{size}")
+                train_text=f"correct:{correct},/{size}"
+                self.printtext.emit(train_text)
                 for i in range(classes_size):
                     print('Accuracy of %5s : %3f%%: %d' % (
                     classes[i], 100.0 * class_correct[i] / class_total[i],class_total[i]))#每一个类别的准确率
@@ -503,6 +518,7 @@ test_name='test_jidan.txt'):
                         file_pic.append(file[i])
 
             for i in range(0,int(len(file_pic))):
+                
                 dir1=dir.split('/')
                 len1=len(classnames)
                 if dir1[-1]in classnames.keys():
@@ -688,6 +704,7 @@ class mywindow(QtWidgets.QWidget,Ui_UI):
         self.train_params["lr"]=self.lr.value()#学习率
         self.train_params["model_name"]=self.comb_model.currentText()#模型名称
         self.train_params["amp"]=self.checkBox_amp.isChecked()#是否混合精度训练
+        self.train_params["lr_f"]=self.comb_lr_f.currentIndex()
     def btn_picdir_cleck(self):
                 
                 self.picsdir= QFileDialog.getExistingDirectory()
