@@ -106,7 +106,7 @@ class MyThread(QThread):
         if "amp" in self.train_params:
             self.amp=self.train_params.get('amp')
         if "lr_f" in self.train_params:#学习率调整方法
-            self.amp=self.train_params.get('lr_f')
+            self.lr_f=self.train_params.get('lr_f')
         self.btn_train_cleck()
     #根据index 生成模型     
     def get_model(self):
@@ -204,6 +204,15 @@ class MyThread(QThread):
         test_name='test.txt')
 
             print(classes)
+            train_weight=[]
+            for key,val in classes.items():
+                if '臭蛋' in val :
+                    train_weight.append(2.0)
+                else:
+                    train_weight.append(1.0)
+            train_weight_loss=torch.tensor(train_weight)
+            print(train_weight_loss)
+
             # for x, y in thisdict.items():
             classtext='类别序号名称：'
             for x,y in classes.items():
@@ -282,14 +291,16 @@ class MyThread(QThread):
             model.to(device)
             # input=torch.randn(1,3,664,664).to(device)
             # print(input) 
-            loss_fn = nn.CrossEntropyLoss()
+            loss_fn = nn.CrossEntropyLoss(weight=train_weight_loss)
+            loss_fn.to(device)
 
             # 定义优化器，用来训练时候优化模型参数，随机梯度下降法
             # optimizer = torch.optim.Adam(model.parameters(), lr=1e-3,weight_decay=0.001)  # 初始学习率
             
             optimizer = torch.optim.RAdam(model.parameters(),lr=self.lr,weight_decay=0.0001)  # 初始学习率
+            exp_lr_scheduler=None
             if self.lr_f==0:
-                exp_lr_scheduler= torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=10, eta_min=0.000005, last_epoch=-1)
+                exp_lr_scheduler= torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=self.epochs, eta_min=0.00005, last_epoch=-1)
             else:
                 exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.9)#按批次减小学习率
             # Initializing in a separate cell so we can easily add more epochs to the same run
@@ -357,6 +368,7 @@ class MyThread(QThread):
                         voutputs = model(vinputs)
                         _, predicted = torch.max(voutputs, 1)
                         c = (predicted == vlabels).squeeze()#每一个batch的(predicted==labels)
+                        c=c.reshape(-1)
                         for j in range(len(vinputs)):#4是每一个batch的个数
                             label = vlabels[j]
                             class_correct[label] += c[j].item()
@@ -494,6 +506,7 @@ class MyThread(QThread):
 
 def create_classimage_dataset(root_dir="./data",train_ratio=0.8,train_name='train_jidan.txt',
 test_name='test_jidan.txt'):
+        platform=sys.platform
 
         imgType_list = {'jpg', 'bmp', 'png', 'jpeg'} #支持的图片文件格式   
         # 用来当测试集
@@ -518,8 +531,10 @@ test_name='test_jidan.txt'):
                         file_pic.append(file[i])
 
             for i in range(0,int(len(file_pic))):
-                
-                dir1=dir.split('/')
+                str_split="/"
+                if platform=="win32":
+                    str_split="\\"
+                dir1=dir.split(str_split)
                 len1=len(classnames)
                 if dir1[-1]in classnames.keys():
                     # print(dir1[-1])
