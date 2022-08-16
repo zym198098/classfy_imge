@@ -2,6 +2,7 @@
     加载pytorch自带的模型，从头训练自己的数据
 '''
 from concurrent.futures import thread
+from posixpath import split
 # from pickle import TRUE
 import time
 from sqlalchemy import false
@@ -9,7 +10,7 @@ from sqlalchemy import false
 import torch
 from torch import dropout, nn
 from torch.utils.data import DataLoader
-from utils import LoadData
+from utils.utils_egg import LoadData
 from torch.optim import lr_scheduler
 # from torchvision.models import alexnet  # 最简单的模型
 # from torchvision.models import vgg11, vgg13, vgg16, vgg19   # VGG系列
@@ -200,8 +201,25 @@ class MyThread(QThread):
  #训练函数
     def btn_train_cleck(self):
             platform=sys.platform
-            classes=create_classimage_dataset(root_dir=self.pic_dir,train_ratio=self.train_percent,train_name='train.txt',
-        test_name='test.txt')
+            dataset_root="./dataset"
+            
+            train_name= os.path.join(dataset_root,'train.txt')
+            test_name= os.path.join(dataset_root,'test.txt')
+            classnames= os.path.join(dataset_root,'classnames.txt')
+            # classes=create_classimage_dataset(root_dir=self.pic_dir,train_ratio=self.train_percent,train_name=train_name,
+            # test_name=test_name,classnamestest=classnames)
+            classes=dict()
+            if os.path.exists(train_name) and os.path.exists(test_name) and os.path.exists(classnames):
+                with open(classnames,'r',encoding='UTF-8') as f:
+                    names=f.readlines()
+                    for l in names:
+                        val=l.split(":")
+                        classes[int(val[0])]=val[1][:-1]         
+            else:
+                 classes=create_classimage_dataset(root_dir=self.pic_dir,train_ratio=self.train_percent,train_name=train_name,
+            test_name=test_name,classnamestest=classnames)
+
+
 
             print(classes)
             train_weight=[]
@@ -233,9 +251,9 @@ class MyThread(QThread):
             batch_size_test =self.val_bench_size#验证批次
             ##给训练集和测试集分别创建一个数据集加载器 class_image/test.txt
             
-            train_data = LoadData("train.txt", True,self.img_size)
-            valid_data = LoadData("test.txt", False,self.img_size)
-            num_work=0
+            train_data = LoadData(train_name, True,self.img_size)
+            valid_data = LoadData(test_name, False,self.img_size)
+            num_work=3
             if platform=='linux':
                 num_work=3
             
@@ -505,7 +523,7 @@ class MyThread(QThread):
 # create data text
 
 def create_classimage_dataset(root_dir="./data",train_ratio=0.8,train_name='train_jidan.txt',
-test_name='test_jidan.txt'):
+test_name='test_jidan.txt',classnamestest='./dataset/classnames.txt'):
         platform=sys.platform
 
         imgType_list = {'jpg', 'bmp', 'png', 'jpeg'} #支持的图片文件格式   
@@ -588,7 +606,7 @@ test_name='test_jidan.txt'):
         a=classnames.values()
         b=classnames.keys()
         c=dict(zip(a,b))
-        with open("classnames.txt","w",encoding='UTF-8') as f:
+        with open(classnamestest,"w",encoding='UTF-8') as f:
             for i ,value1 in c.items():
                 print(i)
                 print(value1) 

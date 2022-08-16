@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import torch
 from torch import nn
 from torch.utils.data import DataLoader
-from utils import LoadData
+from utils.utils_egg import LoadData
 from torch.optim import lr_scheduler
    # Inception 系列
 from PIL import Image
@@ -14,7 +14,7 @@ import torchvision.transforms as transforms
 import torchvision.models as models
 import time
 import walk
-import utils
+import utils.utils_egg as utils_egg
 def get_ResNet(classes,pretrained=True,loadfile = None):
     ResNet=models.resnet101(pretrained)# 这里自动下载官方的预训练模型
     if loadfile!= None:
@@ -65,7 +65,7 @@ if __name__=='__main__':
                 transforms.ToTensor(),#把图片改为Tensor格式
                 # transform_BZ#图片标准化的步骤
             ])
-    test_data=utils.LoadData("verfy1.txt",train_flag=False,img_size=224)
+    test_data=utils_egg.LoadData("verfy1.txt",train_flag=False,img_size=224)
     test_dataloader=DataLoader(test_data,batch_size=48,num_workers=3,pin_memory=True)
     print_step=len(test_dataloader)/20
     print_step=max(int(print_step),1)

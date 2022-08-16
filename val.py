@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import torch
 from torch import nn
 from torch.utils.data import DataLoader
-from utils import LoadData
+from utils.utils_egg import LoadData
 from torch.optim import lr_scheduler
 from torchvision.models import alexnet  # 最简单的模型
 from torchvision.models import vgg11, vgg13, vgg16, vgg19   # VGG系列

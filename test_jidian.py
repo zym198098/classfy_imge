@@ -3,7 +3,7 @@ from matplotlib.pyplot import text
 import torch
 from torch import dropout, nn
 from torch.utils.data import DataLoader
-from utils import LoadData
+from utils.utils_egg import LoadData
 from torch.optim import lr_scheduler
 import torchvision
 import torchvision.models as models
