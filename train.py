@@ -318,7 +318,7 @@ class MyThread(QThread):
             optimizer = torch.optim.RAdam(model.parameters(),lr=self.lr,weight_decay=0.0001)  # 初始学习率
             exp_lr_scheduler=None
             if self.lr_f==0:
-                exp_lr_scheduler= torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=self.epochs, eta_min=0.00005, last_epoch=-1)
+                exp_lr_scheduler= torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=self.epochs, eta_min=0.000001, last_epoch=-1)
             else:
                 exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.9)#按批次减小学习率
             # Initializing in a separate cell so we can easily add more epochs to the same run
