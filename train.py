@@ -62,6 +62,7 @@ class MyThread(QThread):
         self.lr_f=0
         self.train_params=train_params
         self.model_name="restnet50"
+        self.train_exit=False
         
 	
 	# 开启线程后默认执行
@@ -198,8 +199,16 @@ class MyThread(QThread):
         # writer.add_scalars("Accuracy", {"Train": arc}, 1)
 
         return last_loss ,arc
+    #结束训练
+    def btn_exit_train(self):
+        
+        if self.train_exit==False:
+            self.train_exit=True
+            train_text='等待本批次训练完成.....'
+            self.printtext.emit(train_text)
  #训练函数
     def btn_train_cleck(self):
+            self.train_exit=False
             platform=sys.platform
             dataset_root="./dataset"
             
@@ -335,8 +344,11 @@ class MyThread(QThread):
             torch.cuda.empty_cache()#清理cuda缓存
             train_text='modle:'+self.model_name+';'+ 'lr:'+str(self.lr)+';train_benchsize:'+str(self.train_bench_size)
             self.printtext.emit(train_text)
+            
 
             for epoch in range(self.epochs):
+                if self.train_exit:
+                    break
                 print('EPOCH {}:'.format(epoch_number + 1))
                 print("___lr:" ,optimizer.state_dict()['param_groups'][0]['lr'] )
                 train_text='EPOCH {}:'.format(epoch_number + 1)
@@ -346,13 +358,30 @@ class MyThread(QThread):
 
                 # Make sure gradient tracking is on, and do a pass over the data
                 model.train(True)
+                avg_loss=0.0 
+                arc=0.0
                 time_start = time.time()
+
                 if self.train_params["amp"]:
                     #混合精度训练
-                    avg_loss ,arc= self.train_one_epoch(train_dataloader,model,epoch_number, writer, loss_fn, optimizer,device,scaler=scaler)
+                    try:
+                        avg_loss ,arc= self.train_one_epoch(train_dataloader,model,epoch_number, writer, loss_fn, optimizer,device,scaler=scaler)
+                    except Exception as e:
+                        self.train_exit=True
+                        print(e)
+                        train_text=str(e)
+                        self.printtext.emit(train_text)
+                        break
                 else:
                     #正常精度训练
-                    avg_loss ,arc= self.train_one_epoch(train_dataloader,model,epoch_number, writer, loss_fn, optimizer,device,scaler=None)
+                    try:
+                        avg_loss ,arc= self.train_one_epoch(train_dataloader,model,epoch_number, writer, loss_fn, optimizer,device,scaler=None)
+                    except Exception as e:
+                        self.train_exit=True
+                        print(e)
+                        train_text=str(e)
+                        self.printtext.emit(train_text)
+                        break
                 time_end = time.time()
                 print(f"train time: {(time_end-time_start)}")
                 train_text=f"train time: {str(time_end-time_start)}"
@@ -456,63 +485,62 @@ class MyThread(QThread):
                 torch.cuda.empty_cache()#清理cuda缓存
             print("Done!")
             self.printtext.emit("Done!")
-
-            # 保存训练好的模型
-            # model_path='jidan_rest50_last.pth'
-            # model_path='jidan_efficent4_last.pth'
-            # torch.save(model.state_dict(), "model.pth")
-            model.eval()
-            torch.save(model,model_path)
-            # 多GPU
-          
-            device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-            if (torch.cuda.device_count()>1) & muli_gpu:
-
-            
-                state_dict=torch.load(model_path)
-                new_state_dict=OrderedDict()
-                # print(state_dict)
-                for k,v in state_dict.items():
-                    name=k[7:]
-                    new_state_dict[name]=v
-                    # print(k)
-                    # print(v)
-
-                model1=models.resnet50(pretrained=False,num_classes=5)
-                model1.load_state_dict(new_state_dict)
-                model1.to(device)
-                model1.eval()
-                onnx_path=model_path+".onnx"
-                input=torch.randn(1,3,self.img_size,self.img_size).to(device)
-                    # Export the model
-                torch.onnx.export(model1,               # model being run
-                                    input,                         # model input (or a tuple for multiple inputs)
-                                    onnx_path,   # where to save the model (can be a file or file-like object)
-                                    export_params=True,        # store the trained parameter weights inside the model file
-                                    opset_version=10,          # the ONNX version to export the model to
-                                    do_constant_folding=True,  # whether to execute constant folding for optimization
-                                    input_names = ['input'],   # the model's input names
-                                    output_names = ['output'], # the model's output names
-                                    dynamic_axes={'input' : {0 : 'batch_size'},    # variable length axes
-                                                    'output' : {0 : 'batch_size'}})
-            else:
+            if self.train_exit==False:
+                # 保存训练好的模型
+                # model_path='jidan_rest50_last.pth'
+                # model_path='jidan_efficent4_last.pth'
+                # torch.save(model.state_dict(), "model.pth")
                 model.eval()
-                onnx_path=model_path+".onnx"
-                input=torch.randn(1,3,self.img_size,self.img_size).to(device)
-                    # Export the model
-                torch.onnx.export(model,               # model being run
-                                    input,                         # model input (or a tuple for multiple inputs)
-                                    onnx_path,   # where to save the model (can be a file or file-like object)
-                                    export_params=True,        # store the trained parameter weights inside the model file
-                                    opset_version=10,          # the ONNX version to export the model to
-                                    do_constant_folding=True,  # whether to execute constant folding for optimization
-                                    input_names = ['input'],   # the model's input names
-                                    output_names = ['output'], # the model's output names
-                                    dynamic_axes={'input' : {0 : 'batch_size'},    # variable length axes
-                                                    'output' : {0 : 'batch_size'}})
+                torch.save(model,model_path)
+                # 多GPU
+            
+                device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+                if (torch.cuda.device_count()>1) & muli_gpu:
 
-            # print("Saved PyTorch Model Success!")
-            self.printtext.emit("Saved PyTorch Model Success!")
+                
+                    state_dict=torch.load(model_path)
+                    new_state_dict=OrderedDict()
+                    # print(state_dict)
+                    for k,v in state_dict.items():
+                        name=k[7:]
+                        new_state_dict[name]=v
+                        # print(k)
+                        # print(v)
+
+                    model1=models.resnet50(pretrained=False,num_classes=5)
+                    model1.load_state_dict(new_state_dict)
+                    model1.to(device)
+                    model1.eval()
+                    onnx_path=model_path+".onnx"
+                    input=torch.randn(1,3,self.img_size,self.img_size).to(device)
+                        # Export the model
+                    torch.onnx.export(model1,               # model being run
+                                        input,                         # model input (or a tuple for multiple inputs)
+                                        onnx_path,   # where to save the model (can be a file or file-like object)
+                                        export_params=True,        # store the trained parameter weights inside the model file
+                                        opset_version=10,          # the ONNX version to export the model to
+                                        do_constant_folding=True,  # whether to execute constant folding for optimization
+                                        input_names = ['input'],   # the model's input names
+                                        output_names = ['output'], # the model's output names
+                                        dynamic_axes={'input' : {0 : 'batch_size'},    # variable length axes
+                                                        'output' : {0 : 'batch_size'}})
+                else:
+                    model.eval()
+                    onnx_path=model_path+".onnx"
+                    input=torch.randn(1,3,self.img_size,self.img_size).to(device)
+                        # Export the model
+                    torch.onnx.export(model,               # model being run
+                                        input,                         # model input (or a tuple for multiple inputs)
+                                        onnx_path,   # where to save the model (can be a file or file-like object)
+                                        export_params=True,        # store the trained parameter weights inside the model file
+                                        opset_version=10,          # the ONNX version to export the model to
+                                        do_constant_folding=True,  # whether to execute constant folding for optimization
+                                        input_names = ['input'],   # the model's input names
+                                        output_names = ['output'], # the model's output names
+                                        dynamic_axes={'input' : {0 : 'batch_size'},    # variable length axes
+                                                        'output' : {0 : 'batch_size'}})
+                # print("Saved PyTorch Model Success!")
+                self.printtext.emit("Saved PyTorch Model Success!")
     #线程退出
     def stop(self):
         run=self.isRunning
@@ -778,6 +806,7 @@ class mywindow(QtWidgets.QWidget,Ui_UI):
                 # self.btn_traintext.clicked.connect(self.btn_trainT_cleck)
                 # self.btn_valtext.clicked.connect(self.btn_valT_cleck)
                 self.btn_train.clicked.connect(self.woker)
+                self.btn_exit_train.clicked.connect(self.worker.btn_exit_train)
                 self.worker.printtext.connect(self.print_messge)
                 
                 

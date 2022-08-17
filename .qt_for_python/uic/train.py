@@ -149,7 +149,7 @@ class Ui_UI(object):
         self.train_benchsize = QSpinBox(UI)
         self.train_benchsize.setObjectName(u"train_benchsize")
         self.train_benchsize.setMinimum(1)
-        self.train_benchsize.setMaximum(128)
+        self.train_benchsize.setMaximum(512)
 
         self.horizontalLayout_4.addWidget(self.train_benchsize)
 
@@ -161,7 +161,7 @@ class Ui_UI(object):
         self.val_benchsize = QSpinBox(UI)
         self.val_benchsize.setObjectName(u"val_benchsize")
         self.val_benchsize.setMinimum(1)
-        self.val_benchsize.setMaximum(256)
+        self.val_benchsize.setMaximum(1024)
 
         self.horizontalLayout_4.addWidget(self.val_benchsize)
 
@@ -184,10 +184,20 @@ class Ui_UI(object):
 
         self.verticalLayout.addLayout(self.horizontalLayout_3)
 
+        self.horizontalLayout_5 = QHBoxLayout()
+        self.horizontalLayout_5.setObjectName(u"horizontalLayout_5")
         self.btn_train = QPushButton(UI)
         self.btn_train.setObjectName(u"btn_train")
 
-        self.verticalLayout.addWidget(self.btn_train)
+        self.horizontalLayout_5.addWidget(self.btn_train)
+
+        self.btn_exit_train = QPushButton(UI)
+        self.btn_exit_train.setObjectName(u"btn_exit_train")
+
+        self.horizontalLayout_5.addWidget(self.btn_exit_train)
+
+
+        self.verticalLayout.addLayout(self.horizontalLayout_5)
 
         self.horizontalLayout_2 = QHBoxLayout()
         self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
@@ -235,5 +245,6 @@ class Ui_UI(object):
         self.label_2.setText(QCoreApplication.translate("UI", u"\u9a8c\u8bc1\u6279\u6b21\u5927\u5c0f", None))
         self.label_7.setText(QCoreApplication.translate("UI", u"epochs", None))
         self.btn_train.setText(QCoreApplication.translate("UI", u"\u5f00\u59cb\u8bad\u7ec3", None))
+        self.btn_exit_train.setText(QCoreApplication.translate("UI", u"\u7ed3\u675f\u8bad\u7ec3", None))
     # retranslateUi
 

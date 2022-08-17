@@ -221,7 +221,7 @@
             <number>1</number>
            </property>
            <property name="maximum">
-            <number>128</number>
+            <number>512</number>
            </property>
           </widget>
          </item>
@@ -238,7 +238,7 @@
             <number>1</number>
            </property>
            <property name="maximum">
-            <number>256</number>
+            <number>1024</number>
            </property>
           </widget>
          </item>
@@ -267,11 +267,22 @@
       </layout>
      </item>
      <item>
-      <widget class="QPushButton" name="btn_train">
-       <property name="text">
-        <string>开始训练</string>
-       </property>
-      </widget>
+      <layout class="QHBoxLayout" name="horizontalLayout_5">
+       <item>
+        <widget class="QPushButton" name="btn_train">
+         <property name="text">
+          <string>开始训练</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btn_exit_train">
+         <property name="text">
+          <string>结束训练</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </item>
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout_2">
