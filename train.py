@@ -55,6 +55,7 @@ class MyThread(QThread):
         self.pic_dir="./pics"
         self.mult_gpu=False
         self.model_type=0
+        self.model_type_name="restnet50"
         self.epochs=1
         self.train_percent=0.8
         self.img_size=224
@@ -91,6 +92,8 @@ class MyThread(QThread):
         
         if 'model_type' in self.train_params:
                 self.model_type=self.train_params.get('model_type')
+        if 'model_type_name' in self.train_params:
+                self.model_type=self.train_params.get('model_type_name')
         
         if 'epochs' in self.train_params:
                 self.epochs=self.train_params.get('epochs')
@@ -132,11 +135,130 @@ class MyThread(QThread):
                 model=models.vision_transformer.vit_b_32(pretrained=False,image_size=self.img_size,num_classes=self.class_size)
         # 8 efficientnet_v2_m pytorch 1.12
         elif model_index==8:
-                model=models.efficientnet_v2_m(pretrained=False,image_size=self.img_size,num_classes=self.class_size)
+                model=models.efficientnet_v2_m(dropout=0.2,pretrained=False,image_size=self.img_size,num_classes=self.class_size)
         elif model_index==9:
-                model=models.efficientnet_v2_l(pretrained=False,image_size=self.img_size,num_classes=self.class_size)
+                model=models.efficientnet_v2_l(dropout=0.2,pretrained=False,image_size=self.img_size,num_classes=self.class_size)
                 
         return model
+   #根据名称生成模型 
+    def get_model_byname(self):
+            model_name=self.model_type
+    #         "resnet18",
+    # "resnet34",
+    # "resnet50",
+    # "resnet101",
+    # "resnet152",
+    # "resnext50_32x4d",
+    # "resnext101_32x8d",
+    # "resnext101_64x4d",
+    # "wide_resnet50_2",
+    # "wide_resnet101_2",
+    # "densenet121",
+    # "densenet161",
+    # "densenet169",
+    # "densenet201",
+    #  "efficientnet_b0",
+    # "efficientnet_b1",
+    # "efficientnet_b2",
+    # "efficientnet_b3",
+    # "efficientnet_b4",
+    # "efficientnet_b5",
+    # "efficientnet_b6",
+    # "efficientnet_b7",
+    # "efficientnet_v2_s",
+    # "efficientnet_v2_m",
+    # "efficientnet_v2_l",
+    #  "vit_b_16",
+    # "vit_b_32",
+    # "vit_l_16",
+    # "vit_l_32",
+    # "vit_h_14",
+    # "swin_t",
+    # "swin_s",
+    # "swin_b",}
+    #resnet 10
+            if model_name=='resnet18':
+                model=models.resnet18(pretrained=False,num_classes=self.class_size)
+            elif model_name=='resnet34':
+                model=models.resnet34(pretrained=False,num_classes=self.class_size)
+            if model_name=='resnet50':
+                model=models.resnet50(pretrained=False,num_classes=self.class_size)
+            elif model_name=='resnet101':
+                model=models.resnet101(pretrained=False,num_classes=self.class_size)
+            elif model_name=='resnet152':
+                    model=models.resnet152(pretrained=False,num_classes=self.class_size)
+            if model_name=='resnext50_32x4d':
+                model=models.resnext50_32x4d(pretrained=False,num_classes=self.class_size)
+            elif model_name=='resnext101_32x8d':
+                model=models.resnext101_32x8d(pretrained=False,num_classes=self.class_size)
+            if model_name=='resnext101_64x4d':
+                model=models.resnext101_64x4d(pretrained=False,num_classes=self.class_size)
+            elif model_name=='wide_resnet50_2':
+                model=models.wide_resnet50_2(pretrained=False,num_classes=self.class_size)
+            elif model_name=='wide_resnet101_2':
+                    model=models.wide_resnet101_2(pretrained=False,num_classes=self.class_size)
+                    
+            # densenet
+            elif model_name=='densenet121':
+                    model=models.densenet121(pretrained=False,num_classes=self.class_size)
+                # densenet161
+            elif model_name=='densenet161':
+                    model=models.densenet161(pretrained=False,num_classes=self.class_size)  
+            elif model_name=='densenet169':
+                    model=models.densenet169(pretrained=False,num_classes=self.class_size)
+                # densenet161
+            elif model_name=='densenet201':
+                    model=models.densenet201(pretrained=False,num_classes=self.class_size)  
+# efficientnet
+            elif model_name=='efficientnet_b0':
+                    model=models.efficientnet_b0(pretrained=False,num_classes=self.class_size)
+            elif model_name=='efficientnet_b1':
+                    model=models.efficientnet_b1(pretrained=False,num_classes=self.class_size)
+            elif model_name=='efficientnet_b2':
+                    model=models.efficientnet_b2(pretrained=False,num_classes=self.class_size)
+            elif model_name=='efficientnet_b3':
+                    model=models.efficientnet_b3(pretrained=False,num_classes=self.class_size)
+            elif model_name=='efficientnet_b4':
+                    model=models.efficientnet_b4(pretrained=False,num_classes=self.class_size)
+            elif model_name=='efficientnet_b5':
+                    model=models.efficientnet_b5(pretrained=False,num_classes=self.class_size)
+            elif model_name=='efficientnet_b6':
+                    model=models.efficientnet_b6(pretrained=False,num_classes=self.class_size)
+            elif model_name=='efficientnet_b7':
+                    model=models.efficientnet_b7(pretrained=False,num_classes=self.class_size)
+            elif model_name=='efficientnet_v2_s':
+                    model=models.efficientnet_v2_s(dropout=0.2,pretrained=False,image_size=self.img_size,num_classes=self.class_size)   
+            elif model_name=='efficientnet_v2_m':
+                    model=models.efficientnet_v2_m(dropout=0.2,pretrained=False,image_size=self.img_size,num_classes=self.class_size)
+            elif model_name=='efficientnet_v2_l':
+                    model=models.efficientnet_v2_l(dropout=0.2,pretrained=False,image_size=self.img_size,num_classes=self.class_size)
+
+            # vision_transformer
+            elif model_name=='vit_b_16':
+                    model=models.vision_transformer.vit_b_16(pretrained=False,image_size=self.img_size,num_classes=self.class_size)      
+            elif model_name=='vit_b_32':
+                    model=models.vision_transformer.vit_b_32(pretrained=False,image_size=self.img_size,num_classes=self.class_size)
+            elif model_name=='vit_l_16':
+                    model=models.vision_transformer.vit_l_16(pretrained=False,image_size=self.img_size,num_classes=self.class_size)      
+            elif model_name=='vit_l_32':
+                    model=models.vision_transformer.vit_l_32(pretrained=False,image_size=self.img_size,num_classes=self.class_size)
+            elif model_name=='vit_h_14':
+                    model=models.vision_transformer.vit_h_14(pretrained=False,image_size=self.img_size,num_classes=self.class_size)
+#swim
+
+            elif model_name=='swin_t':
+                    model=models.swin_transformer.swin_t(image_size=self.img_size,num_classes=self.class_size)
+            elif model_name=='swin_s':
+                    model=models.swin_transformer.swin_s(image_size=self.img_size,num_classes=self.class_size)
+            elif model_name=='swin_b':
+                    model=models.swin_transformer.swin_b(image_size=self.img_size,num_classes=self.class_size)
+
+            else:
+                model=models.resnet50(pretrained=False,num_classes=self.class_size)
+
+            return model
+        
+
     #train 函数
     def train_one_epoch(self,training_loader:DataLoader,model,epoch_index, tb_writer, loss_fn, optimizer,device="cpu",scaler=None):
         running_loss = 0.
@@ -295,7 +417,8 @@ class MyThread(QThread):
             # model=models.VisionTransformer(image_size=640,patch_size=32,num_layers=12,num_heads=12,hidden_dim=768,mlp_dim=3072,dropout=0.2,num_classes=classes_size+1)
             # model=models.efficientnet_b4(pretrained=False,num_classes=classes_size)
            
-            model=self.get_model()
+            # model=self.get_model()
+            model=self.get_model_byname()
             # print(model)
                 # 如果显卡可用，则用显卡进行训练
             device="cpu"
@@ -328,7 +451,7 @@ class MyThread(QThread):
             exp_lr_scheduler=None
             if self.lr_f==0:
                 exp_lr_scheduler= torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=self.epochs, eta_min=0.000001, last_epoch=-1)
-            else:
+            elif self.lr_f==1:
                 exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.9)#按批次减小学习率
             # Initializing in a separate cell so we can easily add more epochs to the same run
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -392,8 +515,9 @@ class MyThread(QThread):
                     break
                     # sys.exit(1)
                 lr=optimizer.state_dict()['param_groups'][0]['lr']
-                if lr>0.000001 or self.lr_f==0: 
-                    exp_lr_scheduler.step()
+                if lr>0.000001 or self.lr_f==0:
+                    if exp_lr_scheduler!=None: 
+                        exp_lr_scheduler.step()
 
                 # We don't need gradients on to do reporting
                 model.train(False)
@@ -739,9 +863,87 @@ class mywindow(QtWidgets.QWidget,Ui_UI):
         # self.model=models.resnet50(pretrained=False,num_classes=self.class_size)
         self.train_params={}
         self.setupUi(self)
-        self.add_comb_models()
+        self.pre_models_11=["resnet18",
+                            "resnet34",
+                            "resnet50",
+                            "resnet101",
+                            "resnet152",
+                            "resnext50_32x4d",
+                            "resnext101_32x8d",
+                            "resnext101_64x4d",
+                            "wide_resnet50_2",
+                            "wide_resnet101_2",
+                            "densenet121",
+                            "densenet161",
+                            "densenet169",
+                            "densenet201",
+                            "efficientnet_b0",
+                            "efficientnet_b1",
+                            "efficientnet_b2",
+                            "efficientnet_b3",
+                            "efficientnet_b4",
+                            "efficientnet_b5",
+                            "efficientnet_b6",
+                            "efficientnet_b7",
+                            "vit_b_16",
+                            "vit_b_32",
+                            "vit_l_16",
+                            "vit_l_32",
+        ]
+        self.pre_models_12=["resnet18",
+    "resnet34",
+    "resnet50",
+    "resnet101",
+    "resnet152",
+    "resnext50_32x4d",
+    "resnext101_32x8d",
+    "resnext101_64x4d",
+    "wide_resnet50_2",
+    "wide_resnet101_2",
+    "densenet121",
+    "densenet161",
+    "densenet169",
+    "densenet201",
+     "efficientnet_b0",
+    "efficientnet_b1",
+    "efficientnet_b2",
+    "efficientnet_b3",
+    "efficientnet_b4",
+    "efficientnet_b5",
+    "efficientnet_b6",
+    "efficientnet_b7",
+    "efficientnet_v2_s",
+    "efficientnet_v2_m",
+    "efficientnet_v2_l",
+     "vit_b_16",
+    "vit_b_32",
+    "vit_l_16",
+    "vit_l_32",
+    "vit_h_14",
+    "swin_t",
+    "swin_s",
+    "swin_b",]
+        
+        # self.add_comb_models()
+        self.add_comb_models_12()
         self.worker=MyThread(self.train_params)
         self.init_ui()
+    def add_comb_models_12(self):
+            torch_ver=torch.__version__
+            torch_ver_g=False#检查版本号是否大于1.11.0    
+            ver=version.TorchVersion(torch_ver)
+            self.comb_model.clear()
+            if ver>(1.11,0):
+                
+                for modelname1 in self.pre_models_12:
+                    self.comb_model.addItem(modelname1)
+                    print(modelname1) 
+                        
+            else :
+                for modelname2 in self.pre_models_11:
+                    self.comb_model.addItem(modelname2)
+                    print(modelname2) 
+
     def add_comb_models(self):
             torch_ver=torch.__version__
             torch_ver_g=False#检查版本号是否大于1.11.0    
@@ -759,6 +961,7 @@ class mywindow(QtWidgets.QWidget,Ui_UI):
         self.train_params["pic_dir"]=self.lineEdit_picdir.text()
         self.train_params["mult_gpu"]=self.checkBox_multGpu.isChecked()
         self.train_params["model_type"]=self.comb_model.currentIndex()
+        self.train_params["model_type_name"]=self.comb_model.currentText()
         self.train_params["epochs"]=self.epochs.value()
         self.train_params["train_percent"]=self.doubleSpinBox_trainsize.value()#训练文件占总图片数的百分比
         self.train_params["img_size"]=self.img_size.value()#训练图片缩放大小

@@ -206,6 +206,11 @@
              <string>StepLR</string>
             </property>
            </item>
+           <item>
+            <property name="text">
+             <string>固定</string>
+            </property>
+           </item>
           </widget>
          </item>
          <item>

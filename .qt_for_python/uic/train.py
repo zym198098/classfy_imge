@@ -137,6 +137,7 @@ class Ui_UI(object):
         self.comb_lr_f = QComboBox(UI)
         self.comb_lr_f.addItem("")
         self.comb_lr_f.addItem("")
+        self.comb_lr_f.addItem("")
         self.comb_lr_f.setObjectName(u"comb_lr_f")
 
         self.horizontalLayout_4.addWidget(self.comb_lr_f)
@@ -240,6 +241,7 @@ class Ui_UI(object):
         self.label_6.setText(QCoreApplication.translate("UI", u"\u5b66\u4e60\u7387\u66f4\u65b0\u65b9\u6cd5", None))
         self.comb_lr_f.setItemText(0, QCoreApplication.translate("UI", u"CosineAnnealingLR", None))
         self.comb_lr_f.setItemText(1, QCoreApplication.translate("UI", u"StepLR", None))
+        self.comb_lr_f.setItemText(2, QCoreApplication.translate("UI", u"\u56fa\u5b9a", None))
 
         self.label_3.setText(QCoreApplication.translate("UI", u"\u8bad\u7ec3\u6279\u6b21\u5927\u5c0f", None))
         self.label_2.setText(QCoreApplication.translate("UI", u"\u9a8c\u8bc1\u6279\u6b21\u5927\u5c0f", None))
