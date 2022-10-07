@@ -5,7 +5,7 @@ from concurrent.futures import thread
 from posixpath import split
 # from pickle import TRUE
 import time
-from sqlalchemy import false
+# from sqlalchemy import false
 # from matplotlib.pyplot import text
 import torch
 from torch import dropout, nn
@@ -64,6 +64,8 @@ class MyThread(QThread):
         self.train_params=train_params
         self.model_name="restnet50"
         self.train_exit=False
+        self.pretrained=False
+        self.pre_weight=None
         
 	
 	# 开启线程后默认执行
@@ -112,34 +114,54 @@ class MyThread(QThread):
             self.amp=self.train_params.get('amp')
         if "lr_f" in self.train_params:#学习率调整方法
             self.lr_f=self.train_params.get('lr_f')
+
+        if "pretrained" in self.train_params:#预训练
+            self.pretrained=self.train_params.get('pretrained')
+        if "pre_weight" in self.train_params:#预训练模型
+            self.pre_weight=self.train_params.get('pre_weight')
         self.btn_train_cleck()
     #根据index 生成模型     
     def get_model(self):
         model_index=self.model_type
         if model_index==0:
-            model=models.resnet50(pretrained=False,num_classes=self.class_size)
+            model=models.resnet50(pretrained=self.pretrained,num_classes=self.class_size)
         elif model_index==1:
-            model=models.resnet101(pretrained=False,num_classes=self.class_size)
+            model=models.resnet101(pretrained=self.pretrained,num_classes=self.class_size)
         elif model_index==2:
-                model=models.resnet152(pretrained=False,num_classes=self.class_size)
+                model=models.resnet152(pretrained=self.pretrained,num_classes=self.class_size)
         elif model_index==3:
-                model=models.efficientnet_b4(pretrained=False,num_classes=self.class_size)
+                model=models.efficientnet_b4(pretrained=self.pretrained,num_classes=self.class_size)
         elif model_index==4:
-                model=models.densenet121(pretrained=False,num_classes=self.class_size)
+                model=models.densenet121(pretrained=self.pretrained,num_classes=self.class_size)
             # densenet161
         elif model_index==5:
-                model=models.densenet161(pretrained=False,num_classes=self.class_size)    
+                model=models.densenet161(pretrained=self.pretrained,num_classes=self.class_size)    
         elif model_index==6:
-                model=models.regnet_x_32gf(pretrained=False,num_classes=self.class_size)
+                model=models.regnet_x_32gf(pretrained=self.pretrained,num_classes=self.class_size)
         elif model_index==7:
-                model=models.vision_transformer.vit_b_32(pretrained=False,image_size=self.img_size,num_classes=self.class_size)
+                model=models.vision_transformer.vit_b_32(pretrained=self.pretrained,image_size=self.img_size,num_classes=self.class_size)
         # 8 efficientnet_v2_m pytorch 1.12
         elif model_index==8:
-                model=models.efficientnet_v2_m(dropout=0.2,pretrained=False,image_size=self.img_size,num_classes=self.class_size)
+                model=models.efficientnet_v2_m(dropout=0.2,pretrained=self.pretrained,image_size=self.img_size,num_classes=self.class_size)
         elif model_index==9:
-                model=models.efficientnet_v2_l(dropout=0.2,pretrained=False,image_size=self.img_size,num_classes=self.class_size)
+                model=models.efficientnet_v2_l(dropout=0.2,pretrained=self.pretrained,image_size=self.img_size,num_classes=self.class_size)
                 
         return model
+
+    def init_model(self,model:models):
+        print(model)
+        names = [item[0] for item in model._modules.items()]
+        print(names)
+        if(names[-1]=="fc"):
+                    fc=model.fc.in_features
+                    model.fc=nn.Linear(fc,self.class_size)
+                    print(model)
+        elif(names[-1]=="head"):
+                    head=model.head.in_features
+                    model.head=nn.Linear(head,self.class_size)
+                    print(model)
+        return model
+
    #根据名称生成模型 
     def get_model_byname(self):
             model_name=self.model_type
@@ -178,83 +200,152 @@ class MyThread(QThread):
     # "swin_b",}
     #resnet 10
             if model_name=='resnet18':
-                model=models.resnet18(pretrained=False,num_classes=self.class_size)
+                # model=models.resnet18(pretrained=self.pretrained,num_classes=self.class_size)
+                model=models.resnet18(pretrained=self.pretrained)
+                model=self.init_model(model)
             elif model_name=='resnet34':
-                model=models.resnet34(pretrained=False,num_classes=self.class_size)
+                # model=models.resnet34(pretrained=self.pretrained,num_classes=self.class_size)
+                model=models.resnet34(pretrained=self.pretrained)
+                model=self.init_model(model)
             if model_name=='resnet50':
-                model=models.resnet50(pretrained=False,num_classes=self.class_size)
+                model=models.resnet50(pretrained=self.pretrained)
+                model=self.init_model(model)
             elif model_name=='resnet101':
-                model=models.resnet101(pretrained=False,num_classes=self.class_size)
+                # model=models.resnet101(pretrained=self.pretrained,num_classes=self.class_size)
+                model=models.resnet101(pretrained=self.pretrained)
+                model=self.init_model(model)
             elif model_name=='resnet152':
-                    model=models.resnet152(pretrained=False,num_classes=self.class_size)
-            if model_name=='resnext50_32x4d':
-                model=models.resnext50_32x4d(pretrained=False,num_classes=self.class_size)
+                # model=models.resnet152(pretrained=self.pretrained,num_classes=self.class_size)
+                model=models.resnet152(pretrained=self.pretrained)
+                model=self.init_model(model)
+                    
+            elif model_name=='resnext50_32x4d':
+                # model=models.resnext50_32x4d(pretrained=self.pretrained,num_classes=self.class_size)
+                model=models.resnext50_32x4d(pretrained=self.pretrained)
+                model=self.init_model(model)
             elif model_name=='resnext101_32x8d':
-                model=models.resnext101_32x8d(pretrained=False,num_classes=self.class_size)
-            if model_name=='resnext101_64x4d':
-                model=models.resnext101_64x4d(pretrained=False,num_classes=self.class_size)
+                # model=models.resnext101_32x8d(pretrained=self.pretrained,num_classes=self.class_size)
+                model=models.resnext101_32x8d(pretrained=self.pretrained)
+                model=self.init_model(model)
+            elif model_name=='resnext101_64x4d':
+                # model=models.resnext101_64x4d(pretrained=self.pretrained,num_classes=self.class_size)
+                model=models.resnext101_64x4d(pretrained=self.pretrained)
+                model=self.init_model(model)
             elif model_name=='wide_resnet50_2':
-                model=models.wide_resnet50_2(pretrained=False,num_classes=self.class_size)
+                # model=models.wide_resnet50_2(pretrained=self.pretrained,num_classes=self.class_size)
+                model=models.wide_resnet50_2(pretrained=self.pretrained)
+                model=self.init_model(model)
             elif model_name=='wide_resnet101_2':
-                    model=models.wide_resnet101_2(pretrained=False,num_classes=self.class_size)
+                # model=models.wide_resnet101_2(pretrained=self.pretrained,num_classes=self.class_size)
+                model=models.wide_resnet101_2(pretrained=self.pretrained)
+                model=self.init_model(model)
                     
             # densenet
             elif model_name=='densenet121':
-                    model=models.densenet121(pretrained=False,num_classes=self.class_size)
-                # densenet161
+                # model=models.densenet121(pretrained=self.pretrained,num_classes=self.class_size)
+                model=models.densenet121(pretrained=self.pretrained)
+                model=self.init_model(model)
+            # densenet161
             elif model_name=='densenet161':
-                    model=models.densenet161(pretrained=False,num_classes=self.class_size)  
+                # model=models.densenet161(pretrained=self.pretrained,num_classes=self.class_size) 
+                model=models.densenet161(pretrained=self.pretrained)
+                model=self.init_model(model) 
             elif model_name=='densenet169':
-                    model=models.densenet169(pretrained=False,num_classes=self.class_size)
+                # model=models.densenet169(pretrained=self.pretrained,num_classes=self.class_size)
+                model=models.densenet169(pretrained=self.pretrained)
+                model=self.init_model(model)
                 # densenet161
             elif model_name=='densenet201':
-                    model=models.densenet201(pretrained=False,num_classes=self.class_size)  
+                # model=models.densenet201(pretrained=self.pretrained,num_classes=self.class_size) 
+                model=models.densenet201(pretrained=self.pretrained)
+                model=self.init_model(model) 
 # efficientnet
             elif model_name=='efficientnet_b0':
-                    model=models.efficientnet_b0(pretrained=False,num_classes=self.class_size)
+                # model=models.efficientnet_b0(pretrained=self.pretrained,num_classes=self.class_size)
+                model=models.efficientnet_b0(pretrained=self.pretrained)
+                model=self.init_model(model)
             elif model_name=='efficientnet_b1':
-                    model=models.efficientnet_b1(pretrained=False,num_classes=self.class_size)
+                # model=models.efficientnet_b1(pretrained=self.pretrained,num_classes=self.class_size)
+                model=models.efficientnet_b1(pretrained=self.pretrained)
+                model=self.init_model(model)
             elif model_name=='efficientnet_b2':
-                    model=models.efficientnet_b2(pretrained=False,num_classes=self.class_size)
+                # model=models.efficientnet_b2(pretrained=self.pretrained,num_classes=self.class_size)
+                model=models.efficientnet_b2(pretrained=self.pretrained)
+                model=self.init_model(model)
             elif model_name=='efficientnet_b3':
-                    model=models.efficientnet_b3(pretrained=False,num_classes=self.class_size)
+                # model=models.efficientnet_b3(pretrained=self.pretrained,num_classes=self.class_size)
+                model=models.efficientnet_b3(pretrained=self.pretrained)
+                model=self.init_model(model)
             elif model_name=='efficientnet_b4':
-                    model=models.efficientnet_b4(pretrained=False,num_classes=self.class_size)
+                # model=models.efficientnet_b4(pretrained=self.pretrained,num_classes=self.class_size)
+                model=models.efficientnet_b4(pretrained=self.pretrained)
+                model=self.init_model(model)
             elif model_name=='efficientnet_b5':
-                    model=models.efficientnet_b5(pretrained=False,num_classes=self.class_size)
+                #  model=models.efficientnet_b5(pretrained=self.pretrained,num_classes=self.class_size)
+                 model=models.efficientnet_b5(pretrained=self.pretrained)
+                 model=self.init_model(model)
             elif model_name=='efficientnet_b6':
-                    model=models.efficientnet_b6(pretrained=False,num_classes=self.class_size)
+                # model=models.efficientnet_b6(pretrained=self.pretrained,num_classes=self.class_size)
+                model=models.efficientnet_b6(pretrained=self.pretrained)
+                model=self.init_model(model)
             elif model_name=='efficientnet_b7':
-                    model=models.efficientnet_b7(pretrained=False,num_classes=self.class_size)
+                # model=models.efficientnet_b7(pretrained=self.pretrained,num_classes=self.class_size)
+                model=models.efficientnet_b7(pretrained=self.pretrained)
+                model=self.init_model(model)
             elif model_name=='efficientnet_v2_s':
-                    model=models.efficientnet_v2_s(dropout=0.2,pretrained=False,image_size=self.img_size,num_classes=self.class_size)   
+                    # model=models.efficientnet_v2_s(dropout=0.2,pretrained=self.pretrained,image_size=self.img_size,num_classes=self.class_size) 
+                    model=models.efficientnet_v2_s(pretrained=self.pretrained)
+                    model=self.init_model(model)  
             elif model_name=='efficientnet_v2_m':
-                    model=models.efficientnet_v2_m(dropout=0.2,pretrained=False,image_size=self.img_size,num_classes=self.class_size)
+                    # model=models.efficientnet_v2_m(dropout=0.2,pretrained=self.pretrained,image_size=self.img_size,num_classes=self.class_size)
+                    model=models.efficientnet_v2_m(pretrained=self.pretrained)
+                    model=self.init_model(model)  
             elif model_name=='efficientnet_v2_l':
-                    model=models.efficientnet_v2_l(dropout=0.2,pretrained=False,image_size=self.img_size,num_classes=self.class_size)
+                # model=models.efficientnet_v2_l(dropout=0.2,pretrained=self.pretrained,image_size=self.img_size,num_classes=self.class_size)
+                model=models.efficientnet_v2_l(pretrained=self.pretrained)
+                model=self.init_model(model)  
 
             # vision_transformer
             elif model_name=='vit_b_16':
-                    model=models.vision_transformer.vit_b_16(pretrained=False,image_size=self.img_size,num_classes=self.class_size)      
+                # model=models.vision_transformer.vit_b_16(pretrained=self.pretrained,image_size=self.img_size,num_classes=self.class_size)  
+                model=models.vision_transformer.vit_b_16(pretrained=self.pretrained)
+                model=self.vision_transformer.init_model(model)      
             elif model_name=='vit_b_32':
-                    model=models.vision_transformer.vit_b_32(pretrained=False,image_size=self.img_size,num_classes=self.class_size)
+                # model=models.vision_transformer.vit_b_32(pretrained=self.pretrained,image_size=self.img_size,num_classes=self.class_size)
+                model=models.vision_transformer.vit_b_32(pretrained=self.pretrained)
+                model=self.init_model(model)  
             elif model_name=='vit_l_16':
-                    model=models.vision_transformer.vit_l_16(pretrained=False,image_size=self.img_size,num_classes=self.class_size)      
+                # model=models.vision_transformer.vit_l_16(pretrained=self.pretrained,image_size=self.img_size,num_classes=self.class_size)
+                model=models.vision_transformer.vit_l_16(pretrained=self.pretrained)
+                model=self.init_model(model)        
             elif model_name=='vit_l_32':
-                    model=models.vision_transformer.vit_l_32(pretrained=False,image_size=self.img_size,num_classes=self.class_size)
+                # model=models.vision_transformer.vit_l_32(pretrained=self.pretrained,image_size=self.img_size,num_classes=self.class_size)
+                model=models.vision_transformer.vit_l_32(pretrained=self.pretrained)
+                model=self.init_model(model)  
             elif model_name=='vit_h_14':
-                    model=models.vision_transformer.vit_h_14(pretrained=False,image_size=self.img_size,num_classes=self.class_size)
+                # model=models.vision_transformer.vit_h_14(pretrained=self.pretrained,image_size=self.img_size,num_classes=self.class_size)
+                model=models.vision_transformer.vit_h_14(pretrained=self.pretrained)
+                model=self.init_model(model)  
 #swim
 
             elif model_name=='swin_t':
-                    model=models.swin_transformer.swin_t(image_size=self.img_size,num_classes=self.class_size)
+                    # model=models.swin_transformer.swin_t(image_size=self.img_size,num_classes=self.class_size)
+                    model=models.swin_transformer.swin_t(weights= models.swin_transformer.Swin_T_Weights.IMAGENET1K_V1)
+                    # model=models.swin_transformer.swin_t(pretrained=self.pretrained)
+                    model=self.init_model(model)  
             elif model_name=='swin_s':
-                    model=models.swin_transformer.swin_s(image_size=self.img_size,num_classes=self.class_size)
+                    model=models.swin_transformer.swin_s(weights= models.swin_transformer.Swin_S_Weights.IMAGENET1K_V1)
+                    # model=models.swin_transformer.swin_s(pretrained=self.pretrained)
+                    model=self.init_model(model) 
             elif model_name=='swin_b':
-                    model=models.swin_transformer.swin_b(image_size=self.img_size,num_classes=self.class_size)
+                    model=models.swin_transformer.swin_b(weights=models.swin_transformer.Swin_B_Weights.IMAGENET1K_V1)
+                    # model=models.swin_transformer.swin_b(pretrained=self.pretrained)
+                    model=self.init_model(model) 
 
             else:
-                model=models.resnet50(pretrained=False,num_classes=self.class_size)
+                # model=models.resnet50(pretrained=self.pretrained,num_classes=self.class_size)
+                model=models.resnet50(pretrained=self.pretrained)
+                model=self.init_model(model) 
 
             return model
         
@@ -333,6 +424,8 @@ class MyThread(QThread):
             self.train_exit=False
             platform=sys.platform
             dataset_root="./dataset"
+            if(os.path.exists(dataset_root)==False):
+                os.mkdir(dataset_root)
             
             train_name= os.path.join(dataset_root,'train.txt')
             test_name= os.path.join(dataset_root,'test.txt')
@@ -436,6 +529,8 @@ class MyThread(QThread):
             #从最好的模型开始训练
             if os.path.exists((model_name+'_best.pth')):
                 model.load_state_dict(torch.load(model_name+'_best.pth') )
+                train_text='modle loade:'+self.model_name+'_best.pth'+';'
+                self.printtext.emit(train_text)
 
             # device = "cuda" if torch.cuda.is_available() else "cpu"
             model.to(device)
@@ -509,8 +604,8 @@ class MyThread(QThread):
                 print(f"train time: {(time_end-time_start)}")
                 train_text=f"train time: {str(time_end-time_start)}"
                 self.printtext.emit(train_text)
-                if avg_loss<0.0005:
-                    train_text=f"avg_loss: {str(avg_loss)} <0.005 "+"training exit"
+                if avg_loss<0.00001:
+                    train_text=f"avg_loss: {str(avg_loss)} <0.00001 "+"training exit"
                     self.printtext.emit(train_text)
                     break
                     # sys.exit(1)
@@ -657,7 +752,7 @@ class MyThread(QThread):
                                         input,                         # model input (or a tuple for multiple inputs)
                                         onnx_path,   # where to save the model (can be a file or file-like object)
                                         export_params=True,        # store the trained parameter weights inside the model file
-                                        opset_version=10,          # the ONNX version to export the model to
+                                        # opset_version=10,          # the ONNX version to export the model to
                                         do_constant_folding=True,  # whether to execute constant folding for optimization
                                         input_names = ['input'],   # the model's input names
                                         output_names = ['output'], # the model's output names
@@ -953,7 +1048,17 @@ class mywindow(QtWidgets.QWidget,Ui_UI):
             if torch_ver_g:
                 self.comb_model.addItem("efficientnet_v2_m")
                 self.comb_model.addItem("efficientnet_v2_l")
-  
+    def get_preweight_bymodel(self):
+            torch_ver=torch.__version__
+            torch_ver_g=False#检查版本号是否大于1.11.0    
+            ver=version.TorchVersion(torch_ver)
+            if ver>(1.11,0):
+                torch_ver_g=True
+            if torch_ver_g:
+                self.comb_model.addItem("efficientnet_v2_m")
+                self.comb_model.addItem("efficientnet_v2_l")
+        
+
     def train_params_init(self):
         
         self.train_params["train_bench_size"]=self.train_benchsize.value()
@@ -969,6 +1074,10 @@ class mywindow(QtWidgets.QWidget,Ui_UI):
         self.train_params["model_name"]=self.comb_model.currentText()#模型名称
         self.train_params["amp"]=self.checkBox_amp.isChecked()#是否混合精度训练
         self.train_params["lr_f"]=self.comb_lr_f.currentIndex()
+        
+        self.train_params["pre_weight"]=self.cmb_pre_models.currentText()
+        self.train_params["pretrained"]=self.checkBox_pre_train.isChecked()
+        
     def btn_picdir_cleck(self):
                 
                 self.picsdir= QFileDialog.getExistingDirectory()
