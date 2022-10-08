@@ -398,7 +398,10 @@ class MyThread(QThread):
 
             # Gather data and report
             running_loss += loss.item()
-            if i % 100 == 99:
+            len_test=len(training_loader.dataset) /training_loader.batch_size 
+            print_epoch=int(len_test/5)
+            if (i%print_epoch)==(print_epoch-1): 
+            # if i % 100 == 99:
                 last_loss = running_loss / 100 # loss per batch
                 print('  batch {} loss: {}'.format(i + 1, last_loss))
                 train_text='  train size {}/{} loss: {}'.format((i + 1)*training_loader.batch_size,len(training_loader.dataset), last_loss)
