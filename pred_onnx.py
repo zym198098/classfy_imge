@@ -30,12 +30,13 @@ def runonnx():
                 transform_BZ#图片标准化的步骤
             ])
 
-    image = torch.randn(2, 3, 224, 224).cuda()
+    # image = torch.randn(2, 3, 224, 224).cuda()
     img_dir='pics/egg_fd.jpg'
     img=Image.open(img_dir)
     img = img.convert('RGB')#转换为RGB 格式
     img=val_tf(img)
-    img=torch.reshape(img,(1,3,224,224))
+    img=torch.unsqueeze(img,0)
+    # img=torch.reshape(img,(1,3,224,224))
 
     session = onnxruntime.InferenceSession("./swin_s_224_last.pth.onnx")
     meta=session.get_modelmeta()
