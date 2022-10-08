@@ -42,7 +42,7 @@ import torch.onnx
 import onnx
 import torchvision
 import torch.torch_version as version
-import torchvision.version as tversion
+# import torchvision.version as tversion
 
 
 class MyThread(QThread):
@@ -756,8 +756,9 @@ class MyThread(QThread):
                                         do_constant_folding=True,  # whether to execute constant folding for optimization
                                         input_names = ['input'],   # the model's input names
                                         output_names = ['output'], # the model's output names
-                                        dynamic_axes={'input' : {0 : 'batch_size'},    # variable length axes
-                                                        'output' : {0 : 'batch_size'}})
+                                        # dynamic_axes={'input' : {0 : 'batch_size'},    # variable length axes
+                                        #                 'output' : {0 : 'batch_size'}}
+                                                        )
                 # print("Saved PyTorch Model Success!")
                 self.printtext.emit("Saved PyTorch Model Success!")
     #线程退出
