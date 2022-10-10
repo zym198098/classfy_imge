@@ -7,7 +7,8 @@ from PIL import ImageFile
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 from torch.utils.data import Dataset
-
+import os
+import numpy as np
 # 数据归一化与标准化
 
 # 图片标准化
@@ -86,6 +87,76 @@ class LoadData(Dataset):
         return data_height, data_width
 
 
+class LoadData_csv(Dataset):
+    def __init__(self, txt_path, train_flag=True,img_size=664):
+        self.cls_map={}
+        self.imgs_info = self.get_images(txt_path)#图片目录
+        self.train_flag = train_flag
+        self.img_size=(img_size,img_size)
+        
+
+        self.train_tf = transforms.Compose([
+                transforms.RandomRotation(2,center=(0,0),expand=True),
+                transforms.Resize(self.img_size),#将图片压缩成224*224的大小
+                # transforms.RandomHorizontalFlip(),#对图片进行随机的水平翻转
+                # transforms.RandomVerticalFlip(),#随机的垂直翻转
+                # transforms.ColorJitter(brightness=[0.3,0.5],contrast=[0.3,0.5],saturation=[0.3,0.5]),
+                # transforms.ColorJitter(contrast=[1.2,1.3]),
+                transforms.ToTensor(),#把图片改为Tensor格式
+                # transform_BZ#图片标准化的步骤
+            ])
+        self.val_tf = transforms.Compose([##简单把图片压缩了变成Tensor模式
+                transforms.Resize(self.img_size),
+                # transforms.ColorJitter(contrast=[1.2,1.3]),
+                transforms.ToTensor(),
+                # transform_BZ#标准化操作
+            ])
+
+    def get_images(self, txt_path):
+#         status = 'open'
+# assert status == 'open' ,'The status need open.'
+
+        path_exist=os.path.exists(txt_path)
+        assert path_exist==True,txt_path+' file not exist'
+        if( path_exist!=True):
+            imgs_info=[]
+            return imgs_info
+        # imgs_info=np.loadtxt(txt_path,dtype=str, delimiter=",",
+        #                  skiprows=1)   
+        imgs_info=np.loadtxt(txt_path,dtype=str, delimiter=",")                   
+        # print(imgs_info.shape)
+        classes=imgs_info[:,-1]
+        classes.shape
+        cls=np.unique(classes)#去重获取类名
+        # print(len(cls))
+        i=0
+        # cls_map={}
+        for name in cls:
+            self.cls_map[name]=i
+            i=i+1
+        # print(len(imgs_info))
+        for j in range(0,(len(imgs_info))):
+            name=imgs_info[j][1]
+            imgs_info[j][1]=self.cls_map[name]
+        return imgs_info#返回图片信息
+
+    def __getitem__(self, index):#返回真正想返回的东西
+        img_path, label = self.imgs_info[index]
+        img = Image.open(img_path)#打开图片
+        img = img.convert('RGB')#转换为RGB 格式
+        # img = self.padding_black(img)
+        if self.train_flag:
+            img = self.train_tf(img)
+        else:
+            img = self.val_tf(img)
+        label = int(label)
+
+        return img, label
+
+    def __len__(self):
+        return len(self.imgs_info)
+
+   
 if __name__ == "__main__":
     train_dataset = LoadData("class_image/train.txt", True)
     print("数据个数：", len(train_dataset))

@@ -10,7 +10,7 @@ import time
 import torch
 from torch import dropout, nn
 from torch.utils.data import DataLoader
-from utils.utils_egg import LoadData
+from utils.utils_egg import LoadData,LoadData_csv
 from torch.optim import lr_scheduler
 # from torchvision.models import alexnet  # 最简单的模型
 # from torchvision.models import vgg11, vgg13, vgg16, vgg19   # VGG系列
@@ -433,8 +433,17 @@ class MyThread(QThread):
             train_name= os.path.join(dataset_root,'train.txt')
             test_name= os.path.join(dataset_root,'test.txt')
             classnames= os.path.join(dataset_root,'classnames.txt')
-            # classes=create_classimage_dataset(root_dir=self.pic_dir,train_ratio=self.train_percent,train_name=train_name,
-            # test_name=test_name,classnamestest=classnames)
+            # 多GPU训练
+            
+            muli_gpu=self.mult_gpu
+            batch_size =self.train_bench_size#训练批次
+            batch_size_test =self.val_bench_size#验证批次
+            ##给训练集和测试集分别创建一个数据集加载器 class_image/test.txt
+            
+            train_data = LoadData(train_name, True,self.img_size)
+            valid_data = LoadData(test_name, False,self.img_size)
+            
+            
             classes=dict()
             if os.path.exists(train_name) and os.path.exists(test_name) and os.path.exists(classnames):
                 with open(classnames,'r',encoding='UTF-8') as f:
@@ -471,15 +480,7 @@ class MyThread(QThread):
             #类别数量
             classes_size=len(classes)
             self.class_size=classes_size
-            # 多GPU训练
             
-            muli_gpu=self.mult_gpu
-            batch_size =self.train_bench_size#训练批次
-            batch_size_test =self.val_bench_size#验证批次
-            ##给训练集和测试集分别创建一个数据集加载器 class_image/test.txt
-            
-            train_data = LoadData(train_name, True,self.img_size)
-            valid_data = LoadData(test_name, False,self.img_size)
             num_work=3
             if platform=='linux':
                 num_work=3
