@@ -1280,6 +1280,7 @@ class mywindow(QtWidgets.QWidget,Ui_UI):
                 self.verticalLayout_metr.addWidget(self.matplot_ma)
                 self.horizontalLayout_2.setStretch(0,1)
                 self.horizontalLayout_2.setStretch(1,1)
+                self.pic_model(0)
 
     def draw_loss(self,loss1:list,loss2:list):#画loss
          print(loss1,loss2) 
