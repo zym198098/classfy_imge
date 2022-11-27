@@ -62,7 +62,10 @@ class MyMatplotlibFigure(FigureCanvas):
   def __init__(self, width=10, heigh=10, dpi=100):
     # 创建一个Figure,该Figure为matplotlib下的Figure，不是matplotlib.pyplot下面的Figure
         self.figs = Figure(figsize=(width, heigh), dpi=dpi)
-        super(MyMatplotlibFigure, self).__init__(self.figs) # 在父类种激活self.fig， 
+        super(MyMatplotlibFigure, self).__init__(self.figs) # 在父类种激活self.fig，
+        self.figs.patch.set_facecolor('#01386a') # 设置绘图区域颜色 
+        self.axes1 = self.figs.add_subplot(211) # 清理画布后必须重新添加绘图区
+        self.axes = self.figs.add_subplot(212) # 清理画布后必须重新添加绘图区
 
   def mat_plot_drow(self, epoch, loss1,loss2):
     """
@@ -70,11 +73,12 @@ class MyMatplotlibFigure(FigureCanvas):
     :return:
     """
     # self.figs.clf() # 清理画布，这里是clf()
+
     self.axes.cla()   
-    self.axes = self.figs.add_subplot(211) # 清理画布后必须重新添加绘图区
+    # self.axes = self.figs.add_subplot(212) # 清理画布后必须重新添加绘图区
     self.axes.patch.set_facecolor("#01386a") # 设置ax区域背景颜色
     self.axes.patch.set_alpha(0.5) # 设置ax区域背景颜色透明度
-    self.figs.patch.set_facecolor('#01386a') # 设置绘图区域颜色
+    
     # self.axes.spines['bottom'].set_color('r') # 设置下边界颜色
     # self.axes.spines['top'].set_visible(False) # 顶边界不可见
     # self.axes.spines['right'].set_visible(False) # 右边界不可见
@@ -84,30 +88,14 @@ class MyMatplotlibFigure(FigureCanvas):
     self.axes.set_title("训练loss")
     self.axes.plot(epoch, loss1,marker='o', linewidth=1)
     self.axes.plot(epoch, loss2, marker='o', linewidth=0.5)
-    self.axes.legend(['loss1','loss2']) 
+    self.axes.legend(['loss_train','loss_val']) 
     self.axes.set_xticks(epoch)
-
-    self.axes1 = self.figs.add_subplot(212) # 清理画布后必须重新添加绘图区
-    self.axes1.patch.set_facecolor("#01386a") # 设置ax区域背景颜色
-    self.axes1.patch.set_alpha(0.5) # 设置ax区域背景颜色透明度
-    # self.figs.patch.set_facecolor('#01386a') # 设置绘图区域颜色
-    # self.axes.spines['bottom'].set_color('r') # 设置下边界颜色
-    # self.axes.spines['top'].set_visible(False) # 顶边界不可见
-    # self.axes.spines['right'].set_visible(False) # 右边界不可见
-    # # 设置左、下边界在（0，0）处相交
-    # self.axes.spines['bottom'].set_position(('data', 0)) # 设置y轴线原点数据为 0
-    # self.axes.spines['left'].set_position(('data', 0)) # 设置x轴线原点数据为 0   
-    self.axes1.set_title("训练loss-1")
-    self.axes1.plot(epoch, loss1,marker='o', linewidth=1)
-    self.axes1.plot(epoch, loss2, marker='o', linewidth=0.5)
-    self.axes1.legend(['train_loss1','val_loss']) 
-    self.axes1.set_xticks(epoch)
-    self.axes1.draw()
-    self.figs.canvas.flush_events() # 画布刷新self.figs.canvas
-  def mat_plot_drow(self, epoch, loss1):
-        self.axes.cla()   
+    self.draw()
+    self.figs.canvas.flush_events() # 画布刷新self.figs.canvas 
+    # self.figs.canvas.flush_events() # 画布刷新self.figs.canvas
+  def mat_plot_drow1(self, epoch, loss1):
+        self.axes1.cla()   
         print(epoch)
-        self.axes1 = self.figs.add_subplot(212) # 清理画布后必须重新添加绘图区
         self.axes1.patch.set_facecolor("#01386a") # 设置ax区域背景颜色
         self.axes1.patch.set_alpha(0.5) # 设置ax区域背景颜色透明度
         # self.figs.patch.set_facecolor('#01386a') # 设置绘图区域颜色
@@ -117,11 +105,11 @@ class MyMatplotlibFigure(FigureCanvas):
         # # 设置左、下边界在（0，0）处相交
         # self.axes.spines['bottom'].set_position(('data', 0)) # 设置y轴线原点数据为 0
         # self.axes.spines['left'].set_position(('data', 0)) # 设置x轴线原点数据为 0   
-        self.axes1.set_title("训练epoch")
+        self.axes1.set_title("epoch")
         self.axes1.plot(epoch, loss1,marker='o', linewidth=1)
-        self.axes1.legend(['loss1']) 
+        self.axes1.legend(['loss_train']) 
         self.axes1.set_xticks(epoch)
-        self.axes1.draw()
+        self.draw()
         self.figs.canvas.flush_events() # 画布刷新self.figs.canvas
 
 class Mymetrics_plCanvas(FigureCanvas):
@@ -129,7 +117,8 @@ class Mymetrics_plCanvas(FigureCanvas):
     def __init__(self, width=10, heigh=10, dpi=100):
         # 创建一个Figure,该Figure为matplotlib下的Figure，不是matplotlib.pyplot下面的Figure
         self.figs = Figure(figsize=(width, heigh), dpi=dpi)
-        super(Mymetrics_plCanvas, self).__init__(self.figs) # 在父类种激活self.fig， 
+        super(Mymetrics_plCanvas, self).__init__(self.figs) # 在父类种激活self.fig，
+        self.axes = self.figs.add_subplot(111) # 清理画布后必须重新添加绘图区 
     def cnf_matrix_plotter(self,classes,df:pd.DataFrame, cmap=plt.cm.Blues):
         """
          标签名称列表，传入pandas混淆矩阵，绘制混淆矩阵图
@@ -183,6 +172,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
         self.help_menu.addAction('&About', self.about)
         main_lay= QtWidgets.QVBoxLayout(self)
+        self.d=0
 
 
         self.main_widget = QtWidgets.QWidget()
@@ -229,7 +219,11 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         s2=np.random.rand(10)
         # t = np.arange(0.0, 5.0, 0.01)
         # s = np.cos(2 * np.pi * t)
-        figure.mat_plot_drow(epoch=t,loss1=s1,loss2=s2)
+        if(self.d%2)==0:
+            figure.mat_plot_drow(epoch=t,loss1=s1,loss2=s2)
+        else:
+            figure.mat_plot_drow1(epoch=t,loss1=s1)
+        self.d=self.d+1
     def matrix_load_file(self,filename_class:str,filename_metrics:str):
         '''
         加载混淆矩阵的类名map文件（numpy格式）
