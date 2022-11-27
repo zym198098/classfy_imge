@@ -63,12 +63,14 @@ class MyMatplotlibFigure(FigureCanvas):
     # 创建一个Figure,该Figure为matplotlib下的Figure，不是matplotlib.pyplot下面的Figure
         self.figs = Figure(figsize=(width, heigh), dpi=dpi)
         super(MyMatplotlibFigure, self).__init__(self.figs) # 在父类种激活self.fig， 
+
   def mat_plot_drow(self, epoch, loss1,loss2):
     """
     用清除画布刷新的方法绘图
     :return:
     """
-    self.figs.clf() # 清理画布，这里是clf()
+    # self.figs.clf() # 清理画布，这里是clf()
+    self.axes.cla()   
     self.axes = self.figs.add_subplot(211) # 清理画布后必须重新添加绘图区
     self.axes.patch.set_facecolor("#01386a") # 设置ax区域背景颜色
     self.axes.patch.set_alpha(0.5) # 设置ax区域背景颜色透明度
@@ -98,13 +100,29 @@ class MyMatplotlibFigure(FigureCanvas):
     self.axes1.set_title("训练loss-1")
     self.axes1.plot(epoch, loss1,marker='o', linewidth=1)
     self.axes1.plot(epoch, loss2, marker='o', linewidth=0.5)
-    self.axes1.legend(['loss1-1','loss2-1']) 
+    self.axes1.legend(['train_loss1','val_loss']) 
     self.axes1.set_xticks(epoch)
-
-
-    self.figs.canvas.draw() # 这里注意是画布重绘，self.figs.canvas
+    self.axes1.draw()
     self.figs.canvas.flush_events() # 画布刷新self.figs.canvas
-       
+  def mat_plot_drow(self, epoch, loss1):
+        self.axes.cla()   
+        print(epoch)
+        self.axes1 = self.figs.add_subplot(212) # 清理画布后必须重新添加绘图区
+        self.axes1.patch.set_facecolor("#01386a") # 设置ax区域背景颜色
+        self.axes1.patch.set_alpha(0.5) # 设置ax区域背景颜色透明度
+        # self.figs.patch.set_facecolor('#01386a') # 设置绘图区域颜色
+        # self.axes.spines['bottom'].set_color('r') # 设置下边界颜色
+        # self.axes.spines['top'].set_visible(False) # 顶边界不可见
+        # self.axes.spines['right'].set_visible(False) # 右边界不可见
+        # # 设置左、下边界在（0，0）处相交
+        # self.axes.spines['bottom'].set_position(('data', 0)) # 设置y轴线原点数据为 0
+        # self.axes.spines['left'].set_position(('data', 0)) # 设置x轴线原点数据为 0   
+        self.axes1.set_title("训练epoch")
+        self.axes1.plot(epoch, loss1,marker='o', linewidth=1)
+        self.axes1.legend(['loss1']) 
+        self.axes1.set_xticks(epoch)
+        self.axes1.draw()
+        self.figs.canvas.flush_events() # 画布刷新self.figs.canvas
 
 class Mymetrics_plCanvas(FigureCanvas):
     """Simple canvas with a sine plot."""
@@ -119,6 +137,7 @@ class Mymetrics_plCanvas(FigureCanvas):
         cm = confusion_matrix(df['标注类别名称'], df['top-1-预测名称'])#获得混淆矩阵
         
         self.figs.clf() # 清理画布，这里是clf()
+        
         self.axes = self.figs.add_subplot(111) # 清理画布后必须重新添加绘图区
         self.axes.imshow(cm, interpolation='nearest', cmap=cmap)
         # plt.colorbar() # 色条
