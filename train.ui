@@ -25,6 +25,20 @@
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout_7">
        <item>
+        <widget class="QComboBox" name="comb_pic_model">
+         <item>
+          <property name="text">
+           <string extracomment="所有图片在一个目录">单图片目录</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string extracomment="训练验证目录分开">多图片目录</string>
+          </property>
+         </item>
+        </widget>
+       </item>
+       <item>
         <widget class="QPushButton" name="btn_picsdir">
          <property name="text">
           <string>选择分类图片</string>
@@ -43,6 +57,26 @@
           <string>./pics</string>
          </property>
         </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btn_train_pic">
+         <property name="text">
+          <string>训练图片</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="lineEdit_pic_train"/>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btn_val_pic">
+         <property name="text">
+          <string>验证图片</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="lineEdit_pic_val"/>
        </item>
        <item>
         <widget class="QLabel" name="label_4">
@@ -310,6 +344,33 @@
       <layout class="QHBoxLayout" name="horizontalLayout_2">
        <item>
         <widget class="QTextBrowser" name="textBrowser"/>
+       </item>
+       <item>
+        <widget class="QTabWidget" name="tabWidget_matplot">
+         <property name="currentIndex">
+          <number>1</number>
+         </property>
+         <widget class="QWidget" name="tab_loss">
+          <attribute name="title">
+           <string>loss</string>
+          </attribute>
+          <layout class="QHBoxLayout" name="horizontalLayout_6">
+           <item>
+            <layout class="QVBoxLayout" name="verticalLayout_loss"/>
+           </item>
+          </layout>
+         </widget>
+         <widget class="QWidget" name="tab_metr">
+          <attribute name="title">
+           <string>混淆矩阵</string>
+          </attribute>
+          <layout class="QHBoxLayout" name="horizontalLayout_9">
+           <item>
+            <layout class="QVBoxLayout" name="verticalLayout_metr"/>
+           </item>
+          </layout>
+         </widget>
+        </widget>
        </item>
       </layout>
      </item>

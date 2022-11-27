@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'd:\pytoch_proj\class\classfy_imge\train.ui'
+# Form implementation generated from reading ui file 'd:\pytoch_proj\classfy_imge\train.ui'
 #
 # Created by: PyQt5 UI code generator 5.9.2
 #
@@ -23,6 +23,11 @@ class Ui_UI(object):
         self.verticalLayout.setObjectName("verticalLayout")
         self.horizontalLayout_7 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_7.setObjectName("horizontalLayout_7")
+        self.comb_pic_model = QtWidgets.QComboBox(UI)
+        self.comb_pic_model.setObjectName("comb_pic_model")
+        self.comb_pic_model.addItem("")
+        self.comb_pic_model.addItem("")
+        self.horizontalLayout_7.addWidget(self.comb_pic_model)
         self.btn_picsdir = QtWidgets.QPushButton(UI)
         self.btn_picsdir.setObjectName("btn_picsdir")
         self.horizontalLayout_7.addWidget(self.btn_picsdir)
@@ -34,6 +39,18 @@ class Ui_UI(object):
         self.lineEdit_picdir.setSizePolicy(sizePolicy)
         self.lineEdit_picdir.setObjectName("lineEdit_picdir")
         self.horizontalLayout_7.addWidget(self.lineEdit_picdir)
+        self.btn_train_pic = QtWidgets.QPushButton(UI)
+        self.btn_train_pic.setObjectName("btn_train_pic")
+        self.horizontalLayout_7.addWidget(self.btn_train_pic)
+        self.lineEdit_pic_train = QtWidgets.QLineEdit(UI)
+        self.lineEdit_pic_train.setObjectName("lineEdit_pic_train")
+        self.horizontalLayout_7.addWidget(self.lineEdit_pic_train)
+        self.btn_val_pic = QtWidgets.QPushButton(UI)
+        self.btn_val_pic.setObjectName("btn_val_pic")
+        self.horizontalLayout_7.addWidget(self.btn_val_pic)
+        self.lineEdit_pic_val = QtWidgets.QLineEdit(UI)
+        self.lineEdit_pic_val.setObjectName("lineEdit_pic_val")
+        self.horizontalLayout_7.addWidget(self.lineEdit_pic_val)
         self.label_4 = QtWidgets.QLabel(UI)
         self.label_4.setObjectName("label_4")
         self.horizontalLayout_7.addWidget(self.label_4)
@@ -149,17 +166,41 @@ class Ui_UI(object):
         self.textBrowser = QtWidgets.QTextBrowser(UI)
         self.textBrowser.setObjectName("textBrowser")
         self.horizontalLayout_2.addWidget(self.textBrowser)
+        self.tabWidget_matplot = QtWidgets.QTabWidget(UI)
+        self.tabWidget_matplot.setObjectName("tabWidget_matplot")
+        self.tab_loss = QtWidgets.QWidget()
+        self.tab_loss.setObjectName("tab_loss")
+        self.horizontalLayout_6 = QtWidgets.QHBoxLayout(self.tab_loss)
+        self.horizontalLayout_6.setObjectName("horizontalLayout_6")
+        self.verticalLayout_loss = QtWidgets.QVBoxLayout()
+        self.verticalLayout_loss.setObjectName("verticalLayout_loss")
+        self.horizontalLayout_6.addLayout(self.verticalLayout_loss)
+        self.tabWidget_matplot.addTab(self.tab_loss, "")
+        self.tab_metr = QtWidgets.QWidget()
+        self.tab_metr.setObjectName("tab_metr")
+        self.horizontalLayout_9 = QtWidgets.QHBoxLayout(self.tab_metr)
+        self.horizontalLayout_9.setObjectName("horizontalLayout_9")
+        self.verticalLayout_metr = QtWidgets.QVBoxLayout()
+        self.verticalLayout_metr.setObjectName("verticalLayout_metr")
+        self.horizontalLayout_9.addLayout(self.verticalLayout_metr)
+        self.tabWidget_matplot.addTab(self.tab_metr, "")
+        self.horizontalLayout_2.addWidget(self.tabWidget_matplot)
         self.verticalLayout.addLayout(self.horizontalLayout_2)
         self.horizontalLayout.addLayout(self.verticalLayout)
 
         self.retranslateUi(UI)
+        self.tabWidget_matplot.setCurrentIndex(1)
         QtCore.QMetaObject.connectSlotsByName(UI)
 
     def retranslateUi(self, UI):
         _translate = QtCore.QCoreApplication.translate
         UI.setWindowTitle(_translate("UI", "Form"))
+        self.comb_pic_model.setItemText(0, _translate("UI", "单图片目录"))
+        self.comb_pic_model.setItemText(1, _translate("UI", "多图片目录"))
         self.btn_picsdir.setText(_translate("UI", "选择分类图片"))
         self.lineEdit_picdir.setText(_translate("UI", "./pics"))
+        self.btn_train_pic.setText(_translate("UI", "训练图片"))
+        self.btn_val_pic.setText(_translate("UI", "验证图片"))
         self.label_4.setText(_translate("UI", "训练图片占比"))
         self.label_8.setText(_translate("UI", "图片大小"))
         self.checkBox_amp.setText(_translate("UI", "混合精度训练"))
@@ -185,4 +226,6 @@ class Ui_UI(object):
         self.label_7.setText(_translate("UI", "epochs"))
         self.btn_train.setText(_translate("UI", "开始训练"))
         self.btn_exit_train.setText(_translate("UI", "结束训练"))
+        self.tabWidget_matplot.setTabText(self.tabWidget_matplot.indexOf(self.tab_loss), _translate("UI", "loss"))
+        self.tabWidget_matplot.setTabText(self.tabWidget_matplot.indexOf(self.tab_metr), _translate("UI", "混淆矩阵"))
 

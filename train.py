@@ -10,7 +10,7 @@ import time
 import torch
 from torch import dropout, nn
 from torch.utils.data import DataLoader
-from utils.utils_egg import LoadData,LoadData_csv
+from utils.utils_egg import LoadData,LoadData_csv,transform_BZ
 from torch.optim import lr_scheduler
 # from torchvision.models import alexnet  # 最简单的模型
 # from torchvision.models import vgg11, vgg13, vgg16, vgg19   # VGG系列
@@ -42,17 +42,29 @@ import torch.onnx
 import onnx
 import torchvision
 import torch.torch_version as version
+from tqdm import tqdm
+import mylabel
+# from zym_test import  Mymetrics_plCanvas,MyMatplotlibFigure#qt 嵌入matplotlib
+from matplit_pyqt5 import MyMatplotlibFigure,Mymetrics_plCanvas
+import pandas as pd
+import numpy as np
+import torch.nn.functional as F
 # import torchvision.version as tversion
 
 
 class MyThread(QThread):
     printtext=pyqtSignal(str)
+    signal_draw_loss=pyqtSignal(list,list)
+    signal_draw_loss_epoch=pyqtSignal(list)
+    signal_draw_metrics=pyqtSignal(list,pd.DataFrame)
     def __init__(self,train_params={}):
         super().__init__()
         self.class_size=80
         self.train_bench_size=1
         self.val_bench_size=1
         self.pic_dir="./pics"
+        self.pic_train_dir="./pics/train"
+        self.pic_val_dir="./pics/val"
         self.mult_gpu=False
         self.model_type=0
         self.model_type_name="restnet50"
@@ -66,6 +78,7 @@ class MyThread(QThread):
         self.train_exit=False
         self.pretrained=False
         self.pre_weight=None
+        self.pic_model=0
         
 	
 	# 开启线程后默认执行
@@ -88,7 +101,13 @@ class MyThread(QThread):
         
         if 'pic_dir' in self.train_params:
                 self.pic_dir=self.train_params.get('pic_dir')
+        # self.train_params["pic_train_dir"]=self.lineEdit_pic_train.text()
+        # self.train_params["pic_val_dir"]=self.lineEdit_pic_val.text()        
+        if 'pic_train_dir' in self.train_params:
+                self.pic_train_dir=self.train_params.get('pic_train_dir')
         
+        if 'pic_val_dir' in self.train_params:
+                self.pic_pic_val_dir=self.train_params.get('pic_val_dir')
         if 'mult_gpu' in self.train_params:
                 self.mult_gpu=self.train_params.get('mult_gpu')
         
@@ -119,6 +138,9 @@ class MyThread(QThread):
             self.pretrained=self.train_params.get('pretrained')
         if "pre_weight" in self.train_params:#预训练模型
             self.pre_weight=self.train_params.get('pre_weight')
+        if "pic_model" in self.train_params:
+             self.pic_model=self.train_params.get("pic_model")
+        
         self.btn_train_cleck()
     #根据index 生成模型     
     def get_model(self):
@@ -363,7 +385,8 @@ class MyThread(QThread):
         # iter(training_loader) so that we can track the batch
         # index and do some intra-epoch reporting
         print_step=len(training_loader)/50
-        for i, data in enumerate(training_loader):
+        matlib_loss=[]
+        for i, data in tqdm(enumerate(training_loader)):
             # Every data instance is an input + label pair
             inputs, labels = data
             inputs,labels=inputs.to(device),labels.to(device)
@@ -406,6 +429,8 @@ class MyThread(QThread):
                 print('  batch {} loss: {}'.format(i + 1, last_loss))
                 train_text='  train size {}/{} loss: {}'.format((i + 1)*training_loader.batch_size,len(training_loader.dataset), last_loss)
                 self.printtext.emit(train_text)
+                matlib_loss.append(last_loss)
+                self.signal_draw_loss_epoch.emit(matlib_loss)
                 tb_x = epoch_index * len(training_loader) + i + 1
                 tb_writer.add_scalar('Loss/train', last_loss, tb_x)
                 running_loss = 0.
@@ -422,7 +447,58 @@ class MyThread(QThread):
             self.train_exit=True
             train_text='等待本批次训练完成.....'
             self.printtext.emit(train_text)
- #训练函数
+ 
+    def val_fd(self,test_dataset,model,device='cpu'):
+            from PIL import Image
+            img_paths = [each[0] for each in test_dataset.imgs]
+             # 映射关系：索引号 到 类别
+            idx_to_labels = {y:x for x,y in test_dataset.class_to_idx.items()}#将原来类别 索引号；转换为：索引号 类别
+            df = pd.DataFrame()
+            df['图像路径'] = img_paths
+            df['标注类别ID'] = test_dataset.targets
+            df['标注类别名称'] = [idx_to_labels[ID] for ID in test_dataset.targets]
+            print(df['标注类别名称'] )
+            df_pred = pd.DataFrame()
+            n=3
+            val_tf = transforms.Compose([##简单把图片压缩了变成Tensor模式
+                transforms.Resize(self.img_size),
+                # transforms.ColorJitter(contrast=[1.2,1.3]),
+                transforms.ToTensor(),
+                # transform_BZ#标准化操作
+                ])
+            for idx, row in tqdm(df.iterrows()):
+                img_path = row['图像路径']
+                img_pil = Image.open(img_path).convert('RGB')
+                
+                input_img = val_tf(img_pil).unsqueeze(0).to(device) # 预处理
+                pred_logits = model(input_img) # 执行前向预测，得到所有类别的 logit 预测分数
+                pred_softmax = F.softmax(pred_logits, dim=1) # 对 logit 分数做 softmax 运算
+
+                pred_dict = {}
+
+                top_n = torch.topk(pred_softmax, n) # 取置信度最大的 n 个结果
+                pred_ids = top_n[1].cpu().detach().numpy().squeeze() # 解析出类别
+                
+                # top-n 预测结果
+                for i in range(1, n+1):
+                    pred_dict['top-{}-预测ID'.format(i)] = pred_ids[i-1]
+                    # print('top-{}-预测名称'.format(i))
+                    # print(idx_to_labels[pred_ids[i-1]])
+                    pred_dict['top-{}-预测名称'.format(i)] = idx_to_labels[pred_ids[i-1]]
+                    # print(pred_dict['top-{}-预测名称'.format(i)])
+                pred_dict['top-n预测正确'] = row['标注类别ID'] in pred_ids
+                # 每个类别的预测置信度
+                for idx, each in enumerate(test_dataset.classes):
+                    pred_dict['{}-预测置信度'.format(each)] = pred_softmax[0][idx].cpu().detach().numpy()
+                    
+                df_pred = df_pred.append(pred_dict, ignore_index=True)
+            df= pd.concat([df, df_pred], axis=1)
+            df.to_csv('测试集预测结果.csv', index=False)
+            # print(df1['top-1-预测名称'])
+            return df
+
+         
+    #训练函数
     def btn_train_cleck(self):
             self.train_exit=False
             platform=sys.platform
@@ -440,22 +516,74 @@ class MyThread(QThread):
             batch_size_test =self.val_bench_size#验证批次
             ##给训练集和测试集分别创建一个数据集加载器 class_image/test.txt
             
-            train_data = LoadData(train_name, True,self.img_size)
-            valid_data = LoadData(test_name, False,self.img_size)
+           
             
-            
+            loss_train=[]#训练loss
+            loss_val=[]#验证loss
             classes=dict()
-            if os.path.exists(train_name) and os.path.exists(test_name) and os.path.exists(classnames):
-                with open(classnames,'r',encoding='UTF-8') as f:
-                    names=f.readlines()
-                    for l in names:
-                        val=l.split(":")
-                        classes[int(val[0])]=val[1][:-1]         
+            train_data=None
+            valid_data=None
+            if(self.pic_model==0):
+                 
+                if os.path.exists(train_name) and os.path.exists(test_name) and os.path.exists(classnames):
+                    with open(classnames,'r',encoding='UTF-8') as f:
+                        names=f.readlines()
+                        for l in names:
+                            val=l.split(":")
+                            classes[int(val[0])]=val[1][:-1]         
+                else:
+                    classes=create_classimage_dataset(root_dir=self.pic_dir,train_ratio=self.train_percent,train_name=train_name,
+                test_name=test_name,classnamestest=classnames)
+
+                train_data = LoadData(train_name, True,self.img_size)
+                valid_data = LoadData(test_name, False,self.img_size)
+                train_data.classes=classes
+                class_to_idx=dict(zip(classes.values(),classes.keys()))
+                train_data.class_to_idx=class_to_idx
+                valid_data.classes=classes
+                valid_data.class_to_idx=class_to_idx
+
             else:
-                 classes=create_classimage_dataset(root_dir=self.pic_dir,train_ratio=self.train_percent,train_name=train_name,
-            test_name=test_name,classnamestest=classnames)
-
-
+                print('model 1')
+                transform_BZ= transforms.Normalize(
+                # mean=[0.485, 0.456, 0.406],#imagenet 标准化参数
+                # std=[0.229, 0.224, 0.225]
+            #     [-0.0060067656, -0.006891677, -0.007734876]
+            # [0.009368785, 0.009223793, 0.009070563]
+                # mean=[0.5, 0.5, 0.5],# 标准化参数
+                # std=[0.5, 0.5, 0.5]
+                mean=[0.03371112, 0.03064092, 0.027711032],# 标准化参数
+                std=[0.028724361, 0.028832901, 0.028438283]
+                )
+                train_tf = transforms.Compose([
+                    
+                    transforms.RandomRotation(2,center=(0,0),expand=True),
+                    transforms.Resize((self.img_size,self.img_size)),#将图片压缩成224*224的大小
+                    # transforms.RandomHorizontalFlip(),#对图片进行随机的水平翻转
+                    # transforms.RandomVerticalFlip(),#随机的垂直翻转
+                    # transforms.ColorJitter(brightness=[0.3,0.5],contrast=[0.3,0.5],saturation=[0.3,0.5]),
+                    # transforms.ColorJitter(contrast=[1.2,1.3]),
+                    transforms.ToTensor(),#把图片改为Tensor格式
+                    transform_BZ#图片标准化的步骤
+                    ])
+                val_tf = transforms.Compose([##简单把图片压缩了变成Tensor模式
+                        transforms.Resize((self.img_size,self.img_size)),
+                        # transforms.ColorJitter(contrast=[1.2,1.3]),
+                        transforms.ToTensor(),
+                        # transform_BZ#标准化操作
+                        ])
+                train_data=datasets.ImageFolder(self.pic_train_dir,train_tf)
+                valid_data=datasets.ImageFolder(self.pic_pic_val_dir,val_tf)
+                classes={y:x  for x,y in train_data.class_to_idx.items()}
+                # classes=train_data.class_to_idx
+                # i=0
+                # # classes.clear()
+                # for name in train_data.classes:
+                #      classes[i]=name
+                #      i=i+1
+                     
+                
+            
 
             print(classes)
             train_weight=[]
@@ -487,34 +615,6 @@ class MyThread(QThread):
             
             train_dataloader = DataLoader(dataset=train_data, num_workers=num_work, pin_memory=True, batch_size=batch_size, shuffle=True)
             test_dataloader = DataLoader(dataset=valid_data, num_workers=num_work, pin_memory=True, batch_size=batch_size_test)
-
-
-            # model = alexnet(pretrained=False, num_classes=5).to(device) # 29.3%（不使用模型的预训练参数）
-
-            '''        VGG 系列    '''
-            # model = vgg11(pretrained=False, num_classes=5).to(device)   #  23.1%
-            # model = vgg13(pretrained=False, num_classes=5).to(device)   # 30.0%
-            # model = vgg16(pretrained=False, num_classes=5).to(device)
-
-
-            '''        ResNet 系列    '''
-            # model = resnet18(pretrained=False, num_classes=200).to(device)    # 43.6%
-            # model = resnet34(pretrained=False, num_classes=5).to(device)
-            # model = resnet50(pretrained= False, num_classes=5).to(device)
-            # model = resnet101(pretrained=False, num_classes=10).to(device)   #  26.2%
-            # model = resnet152(pretrained=False, num_classes=5).to(device)
-
-
-            '''        Inception 系列    '''
-            # model = inception_v3(pretrained=False, num_classes=5).to(device)
-            
-            # model = get_ResNet(10,True).to(device)#迁移学习
-            # model=models.resnet50(pretrained=False,num_classes=classes_size)
-            
-            # model=models.VisionTransformer(image_size=640,patch_size=32,num_layers=12,num_heads=12,hidden_dim=768,mlp_dim=3072,dropout=0.2,num_classes=classes_size+1)
-            # model=models.efficientnet_b4(pretrained=False,num_classes=classes_size)
-           
-            # model=self.get_model()
             model=self.get_model_byname()
             # print(model)
                 # 如果显卡可用，则用显卡进行训练
@@ -538,6 +638,7 @@ class MyThread(QThread):
 
             # device = "cuda" if torch.cuda.is_available() else "cpu"
             model.to(device)
+            # model.eval()
             # input=torch.randn(1,3,664,664).to(device)
             # print(input) 
             loss_fn = nn.CrossEntropyLoss(weight=train_weight_loss)
@@ -554,9 +655,11 @@ class MyThread(QThread):
                 exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.9)#按批次减小学习率
             # Initializing in a separate cell so we can easily add more epochs to the same run
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            write_name='runs/egg_'+model_name+'_{}'.format(timestamp)
+            write_name='runs/'+model_name+'_{}'.format(timestamp)
             # writer = SummaryWriter('runs/egg_rest50_trainer_{}'.format(timestamp))
             writer = SummaryWriter(write_name)
+            checkponts_dir=write_name+'/checkponts'
+            os.mkdir(checkponts_dir)
             epoch_number = 0
             EPOCHS = self.epochs
             best_vloss = 2.0
@@ -620,12 +723,14 @@ class MyThread(QThread):
 
                 # We don't need gradients on to do reporting
                 model.train(False)
+                loss_train.append(avg_loss)
 
                 running_vloss = 0.0
                 time_startv = time.time()
                 correct=0
                 size=len(test_dataloader.dataset)
-                torch.cuda.empty_cache()#清理cuda缓存
+                if(device!='cpu'):
+                    torch.cuda.empty_cache()#清理cuda缓存
                 model.eval()
                 class_correct = list(0. for i in range(classes_size))#10是类别的个数
                 class_total = list(0. for i in range(classes_size))
@@ -672,6 +777,7 @@ class MyThread(QThread):
                 correct /= size
 
                 avg_vloss = running_vloss / vloss_sum
+                loss_val.append(avg_vloss)
                 print('LOSS train {} LOSS valid {} train arc {} vaild arc {}'.format(avg_loss, avg_vloss,arc*100,correct*100))
                 train_text=f'LOSS train {avg_loss} LOSS valid {avg_vloss} train arc {arc} vaild arc {correct}'
                 # train_text='LOSS train: '+str(avg_loss)+'LOSS valid :'+str(avg_vloss)+ 'train arc:'+ str(arc*100)+'vaild arc :'+ str(correct*100)
@@ -681,6 +787,7 @@ class MyThread(QThread):
                 train_text=(f"test time: {(time_endv-time_startv)}")
                 # self.textBrowser.append(train_text)
                 self.printtext.emit(train_text)
+                self.signal_draw_loss.emit(loss_train,loss_val)
 
                 # Log the running loss averaged per batch
                 # for both training and validation
@@ -705,7 +812,8 @@ class MyThread(QThread):
 
 
                 epoch_number += 1
-                torch.cuda.empty_cache()#清理cuda缓存
+                if(device!='cpu'):
+                    torch.cuda.empty_cache()#清理cuda缓存
             print("Done!")
             self.printtext.emit("Done!")
             if self.train_exit==False:
@@ -714,14 +822,19 @@ class MyThread(QThread):
                 # model_path='jidan_efficent4_last.pth'
                 # torch.save(model.state_dict(), "model.pth")
                 model.eval()
-                torch.save(model,model_path)
+                DF_V=self.val_fd(test_dataset=valid_data,model=model,device=device)
+                classes1=[]
+                for cla in classes.values():
+                     classes1.append(cla)
+                self.signal_draw_metrics.emit(classes1,DF_V)
+                torch.save(model,checkponts_dir+'/'+model_path)
                 # 多GPU
             
                 device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
                 if (torch.cuda.device_count()>1) & muli_gpu:
 
                 
-                    state_dict=torch.load(model_path)
+                    state_dict=torch.load(checkponts_dir+'/'+model_path)
                     new_state_dict=OrderedDict()
                     # print(state_dict)
                     for k,v in state_dict.items():
@@ -734,7 +847,7 @@ class MyThread(QThread):
                     model1.load_state_dict(new_state_dict)
                     model1.to(device)
                     model1.eval()
-                    onnx_path=model_path+".onnx"
+                    onnx_path=checkponts_dir+'/'+model_name+".onnx"
                     input=torch.randn(1,3,self.img_size,self.img_size).to(device)
                         # Export the model
                     torch.onnx.export(model1,               # model being run
@@ -749,7 +862,7 @@ class MyThread(QThread):
                                                         'output' : {0 : 'batch_size'}})
                 else:
                     model.eval()
-                    onnx_path=model_path+".onnx"
+                    onnx_path=checkponts_dir+'/'+model_name+".onnx"
                     input=torch.randn(1,3,self.img_size,self.img_size).to(device)
                         # Export the model
                     torch.onnx.export(model,               # model being run
@@ -955,6 +1068,10 @@ def get_devices():
 class mywindow(QtWidgets.QWidget,Ui_UI):
     def __init__(self,parent=None):
         super(mywindow,self).__init__(parent)
+        # self.mylabel=mylabel.Label(self)
+        self.matplot_loss=MyMatplotlibFigure(width=8,heigh=6,dpi=100)
+        self.matplot_ma=Mymetrics_plCanvas(width=8,heigh=6,dpi=100)
+       
         self.picsdir='./class_imgs'
         self.t_text="train.txt"
         self.v_text="test.txt"
@@ -1069,6 +1186,8 @@ class mywindow(QtWidgets.QWidget,Ui_UI):
         self.train_params["train_bench_size"]=self.train_benchsize.value()
         self.train_params["val_bench_size"]=self.val_benchsize.value()
         self.train_params["pic_dir"]=self.lineEdit_picdir.text()
+        self.train_params["pic_train_dir"]=self.lineEdit_pic_train.text()
+        self.train_params["pic_val_dir"]=self.lineEdit_pic_val.text()
         self.train_params["mult_gpu"]=self.checkBox_multGpu.isChecked()
         self.train_params["model_type"]=self.comb_model.currentIndex()
         self.train_params["model_type_name"]=self.comb_model.currentText()
@@ -1082,11 +1201,20 @@ class mywindow(QtWidgets.QWidget,Ui_UI):
         
         self.train_params["pre_weight"]=self.cmb_pre_models.currentText()
         self.train_params["pretrained"]=self.checkBox_pre_train.isChecked()
+        self.train_params["pic_model"]=self.comb_pic_model.currentIndex()
         
     def btn_picdir_cleck(self):
                 
                 self.picsdir= QFileDialog.getExistingDirectory()
                 self.lineEdit_picdir.setText( self.picsdir)
+    def btn_train_pic_click(self):
+                
+                picsdir= QFileDialog.getExistingDirectory()
+                self.lineEdit_pic_train.setText( picsdir)
+    def btn_val_pic_click(self):
+                
+                picsdir= QFileDialog.getExistingDirectory()
+                self.lineEdit_pic_val.setText( picsdir)
     # def btn_trainT_cleck(self):
                 
     #             self.t_text= QFileDialog.getOpenFileName()
@@ -1117,15 +1245,61 @@ class mywindow(QtWidgets.QWidget,Ui_UI):
     def print_messge(self,text):
         self.textBrowser.append(text)
             
+    def pic_model(self,i):
+        if(self.comb_pic_model.currentIndex()==0):
+              self.btn_picsdir.setVisible(True)
+              self.lineEdit_picdir.setVisible(True)
+              self.btn_train_pic.setVisible(False)
+              self.btn_val_pic.setVisible(False)
+              self.lineEdit_pic_train.setVisible(False)
+              self.lineEdit_pic_val.setVisible(False)
+        else:
+              self.btn_picsdir.setVisible(False)
+              self.lineEdit_picdir.setVisible(False)
+              self.btn_train_pic.setVisible(True)
+              self.btn_val_pic.setVisible(True)
+              self.lineEdit_pic_train.setVisible(True)
+              self.lineEdit_pic_val.setVisible(True)
 
     def init_ui(self):        
                 self.btn_picsdir.clicked.connect(self.btn_picdir_cleck)
+                self.btn_train_pic.clicked.connect(self.btn_train_pic_click)
+                self.btn_val_pic.clicked.connect(self.btn_val_pic_click)
                 # self.btn_traintext.clicked.connect(self.btn_trainT_cleck)
                 # self.btn_valtext.clicked.connect(self.btn_valT_cleck)
                 self.btn_train.clicked.connect(self.woker)
                 self.btn_exit_train.clicked.connect(self.worker.btn_exit_train)
-                self.worker.printtext.connect(self.print_messge)
-                
+                self.worker.printtext.connect(self.print_messge)#x线程信号打印
+                self.worker.signal_draw_loss.connect(self.draw_loss)
+                self.worker.signal_draw_loss_epoch.connect(self.draw_loss1)
+                self.worker.signal_draw_metrics.connect(self.draw_metrics)
+                self.comb_pic_model.currentIndexChanged.connect(self.pic_model)
+                # self.horizontalLayout_2.addWidget(self.mylabel)
+                # self.horizontalLayout_2.addWidget(self.matplot_loss)
+                self.verticalLayout_loss.addWidget(self.matplot_loss)
+                self.verticalLayout_metr.addWidget(self.matplot_ma)
+                self.horizontalLayout_2.setStretch(0,1)
+                self.horizontalLayout_2.setStretch(1,1)
+
+    def draw_loss(self,loss1:list,loss2:list):#画loss
+         print(loss1,loss2) 
+         if(len(loss1)!=len(loss2)):
+              return
+          
+         enpoch=len(loss1)
+         t = np.arange(enpoch) 
+         self.matplot_loss.mat_plot_drow(epoch= t,loss1=loss1,loss2=loss2)
+    def draw_loss1(self,loss1:list):#画loss
+         
+         if(len(loss1)==0):
+              return
+          
+         enpoch=len(loss1)
+         t = np.arange(enpoch) 
+         self.matplot_loss.mat_plot_drow1(epoch= t,loss1=loss1)        
+    def draw_metrics(self,classes:list,data:pd.DataFrame):#画混淆矩阵
+         self.matplot_ma.cnf_matrix_plotter(classes=classes,df=data)
+         print(classes)        
                 
 if __name__=='__main__':
 

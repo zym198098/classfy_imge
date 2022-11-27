@@ -17,18 +17,21 @@ transform_BZ= transforms.Normalize(
     # std=[0.229, 0.224, 0.225]
 #     [-0.0060067656, -0.006891677, -0.007734876]
 # [0.009368785, 0.009223793, 0.009070563]
-    # mean=[0.5, 0.5, 0.5],# 标准化参数
-    # std=[0.5, 0.5, 0.5]
-    mean=[0.03371112, 0.03064092, 0.027711032],# 标准化参数
-    std=[0.028724361, 0.028832901, 0.028438283]
+    mean=[0.5, 0.5, 0.5],# 标准化参数
+    std=[0.5, 0.5, 0.5]
+    # mean=[0.03371112, 0.03064092, 0.027711032],# 标准化参数
+    # std=[0.028724361, 0.028832901, 0.028438283]
 )
 
 
 class LoadData(Dataset):
-    def __init__(self, txt_path, train_flag=True,img_size=664):
-        self.imgs_info = self.get_images(txt_path)
+    def __init__(self, txt_path, train_flag=True,img_size=224):
+        self.imgs = self.get_images(txt_path)
         self.train_flag = train_flag
         self.img_size=(img_size,img_size)
+        self.classes=dict()
+        # self.targets=[]
+        self.class_to_idx={}
 
         self.train_tf = transforms.Compose([
                 transforms.RandomRotation(2,center=(0,0),expand=True),
@@ -44,14 +47,20 @@ class LoadData(Dataset):
                 transforms.Resize(self.img_size),
                 # transforms.ColorJitter(contrast=[1.2,1.3]),
                 transforms.ToTensor(),
-                transform_BZ#标准化操作
+                # transform_BZ#标准化操作
             ])
 
     def get_images(self, txt_path):
         with open(txt_path, 'r', encoding='utf-8') as f:
-            imgs_info = f.readlines()
-            imgs_info = list(map(lambda x:x.strip().split('\t'), imgs_info))
-        return imgs_info#返回图片信息
+            imgs = f.readlines()
+            # si=len(imgs)
+            self.targets=list(map(lambda x:int(x.strip().split('\t')[1]), imgs))
+            
+            
+            imgs = list(map(lambda x:x.strip().split('\t'), imgs))
+            
+            
+        return imgs#返回图片信息
 
     def padding_black(self, img):#如果尺寸太小可以扩充
         w, h  = img.size
@@ -66,7 +75,7 @@ class LoadData(Dataset):
         return img
 
     def __getitem__(self, index):#返回真正想返回的东西
-        img_path, label = self.imgs_info[index]
+        img_path, label = self.imgs[index]
         img = Image.open(img_path)#打开图片
         img = img.convert('RGB')#转换为RGB 格式
         # img = self.padding_black(img)
@@ -79,7 +88,7 @@ class LoadData(Dataset):
         return img, label
 
     def __len__(self):
-        return len(self.imgs_info)
+        return len(self.imgs)
 
     def get_height_and_width(self, idx):
         data_height = self.img_size
@@ -90,9 +99,11 @@ class LoadData(Dataset):
 class LoadData_csv(Dataset):
     def __init__(self, txt_path, train_flag=True,img_size=664):
         self.cls_map={}
-        self.imgs_info = self.get_images(txt_path)#图片目录
+        self.imgs = self.get_images(txt_path)#图片目录
         self.train_flag = train_flag
         self.img_size=(img_size,img_size)
+        self.classes=dict()
+        self.targets=[]
         
 
         self.train_tf = transforms.Compose([
@@ -119,13 +130,13 @@ class LoadData_csv(Dataset):
         path_exist=os.path.exists(txt_path)
         assert path_exist==True,txt_path+' file not exist'
         if( path_exist!=True):
-            imgs_info=[]
-            return imgs_info
-        # imgs_info=np.loadtxt(txt_path,dtype=str, delimiter=",",
+            imgs=[]
+            return imgs
+        # imgs=np.loadtxt(txt_path,dtype=str, delimiter=",",
         #                  skiprows=1)   
-        imgs_info=np.loadtxt(txt_path,dtype=str, delimiter=",")                   
-        # print(imgs_info.shape)
-        classes=imgs_info[:,-1]
+        imgs=np.loadtxt(txt_path,dtype=str, delimiter=",")                   
+        # print(imgs.shape)
+        classes=imgs[:,-1]
         classes.shape
         cls=np.unique(classes)#去重获取类名
         # print(len(cls))
@@ -134,14 +145,14 @@ class LoadData_csv(Dataset):
         for name in cls:
             self.cls_map[name]=i
             i=i+1
-        # print(len(imgs_info))
-        for j in range(0,(len(imgs_info))):
-            name=imgs_info[j][1]
-            imgs_info[j][1]=self.cls_map[name]
-        return imgs_info#返回图片信息
+        # print(len(imgs))
+        for j in range(0,(len(imgs))):
+            name=imgs[j][1]
+            imgs[j][1]=self.cls_map[name]
+        return imgs#返回图片信息
 
     def __getitem__(self, index):#返回真正想返回的东西
-        img_path, label = self.imgs_info[index]
+        img_path, label = self.imgs[index]
         img = Image.open(img_path)#打开图片
         img = img.convert('RGB')#转换为RGB 格式
         # img = self.padding_black(img)
@@ -154,7 +165,7 @@ class LoadData_csv(Dataset):
         return img, label
 
     def __len__(self):
-        return len(self.imgs_info)
+        return len(self.imgs)
 
    
 if __name__ == "__main__":

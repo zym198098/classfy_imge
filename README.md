@@ -9,6 +9,7 @@ torchvision>1.11
 安装PyQt5以及PyQt5-tools(这里面就有designer了)
 
 ```
+
 pip install PyQt5
 pip install PyQt5-tools
 ```
