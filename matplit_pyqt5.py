@@ -28,6 +28,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix
 import itertools
+from PIL import Image
 progname = os.path.basename(sys.argv[0])
 progversion = "0.1"
 
@@ -65,6 +66,7 @@ class MyMatplotlibFigure(FigureCanvas):
         super(MyMatplotlibFigure, self).__init__(self.figs) # 在父类种激活self.fig，
         self.figs.patch.set_facecolor('#01386a') # 设置绘图区域颜色 
         self.axes1 = self.figs.add_subplot(211) # 清理画布后必须重新添加绘图区
+        
         self.axes = self.figs.add_subplot(212) # 清理画布后必须重新添加绘图区
 
   def mat_plot_drow(self, epoch, loss1,loss2):
@@ -112,12 +114,37 @@ class MyMatplotlibFigure(FigureCanvas):
         self.draw()
         self.figs.canvas.flush_events() # 画布刷新self.figs.canvas
 
+class Myrelitu_plCanvas(FigureCanvas):
+    """Simple canvas with a sine plot."""
+    def __init__(self, width=10, heigh=10, dpi=100):
+        # 创建一个Figure,该Figure为matplotlib下的Figure，不是matplotlib.pyplot下面的Figure
+        self.figs = Figure(figsize=(width, heigh), dpi=dpi)
+        super(Myrelitu_plCanvas, self).__init__(self.figs) # 在父类种激活self.fig，
+        # self.figs.patch.set_facecolor('#01386a') # 设置绘图区域颜色 
+        self.axes = self.figs.add_subplot(111) # 清理画布后必须重新添加绘图区
+        img_path='./pics/egg_chd.jpg'
+        self.img_pil = Image.open(img_path)
+        if(self.img_pil.size!=0):
+            self.axes.imshow(self.img_pil) 
+    def draw_relitu(self,img_pil, cmap=plt.cm.Blues):
+        """
+         标签名称列表，传入pandas混淆矩阵，绘制混淆矩阵图
+        """
+        if(img_pil.size==0):#空图像
+            return
+        self.axes.cla() 
+        self.axes.imshow(img_pil) 
+        self.draw()
+        # self.figs.canvas.draw() # 这里注意是画布重绘，self.figs.canvas
+        self.figs.canvas.flush_events() # 画布刷新self.figs.canvas
+
 class Mymetrics_plCanvas(FigureCanvas):
     """Simple canvas with a sine plot."""
     def __init__(self, width=10, heigh=10, dpi=100):
         # 创建一个Figure,该Figure为matplotlib下的Figure，不是matplotlib.pyplot下面的Figure
         self.figs = Figure(figsize=(width, heigh), dpi=dpi)
         super(Mymetrics_plCanvas, self).__init__(self.figs) # 在父类种激活self.fig，
+        self.figs.patch.set_facecolor('#01386a') # 设置绘图区域颜色 
         self.axes = self.figs.add_subplot(111) # 清理画布后必须重新添加绘图区 
     def cnf_matrix_plotter(self,classes,df:pd.DataFrame, cmap=plt.cm.Blues):
         """

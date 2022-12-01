@@ -11,6 +11,7 @@ import torch
 from torch import dropout, nn
 from torch.utils.data import DataLoader
 from utils.utils_egg import LoadData,LoadData_csv,transform_BZ
+from utils.热力图  import get_relitu
 from torch.optim import lr_scheduler
 # from torchvision.models import alexnet  # 最简单的模型
 # from torchvision.models import vgg11, vgg13, vgg16, vgg19   # VGG系列
@@ -45,10 +46,11 @@ import torch.torch_version as version
 from tqdm import tqdm
 import mylabel
 # from zym_test import  Mymetrics_plCanvas,MyMatplotlibFigure#qt 嵌入matplotlib
-from matplit_pyqt5 import MyMatplotlibFigure,Mymetrics_plCanvas
+from matplit_pyqt5 import MyMatplotlibFigure,Mymetrics_plCanvas,Myrelitu_plCanvas
 import pandas as pd
 import numpy as np
 import torch.nn.functional as F
+from PIL import Image
 # import torchvision.version as tversion
 
 
@@ -1071,6 +1073,7 @@ class mywindow(QtWidgets.QWidget,Ui_UI):
         # self.mylabel=mylabel.Label(self)
         self.matplot_loss=MyMatplotlibFigure(width=8,heigh=6,dpi=100)
         self.matplot_ma=Mymetrics_plCanvas(width=8,heigh=6,dpi=100)
+        self.matplot_relitu=Myrelitu_plCanvas(width=8,heigh=6,dpi=100)
        
         self.picsdir='./class_imgs'
         self.t_text="train.txt"
@@ -1215,6 +1218,32 @@ class mywindow(QtWidgets.QWidget,Ui_UI):
                 
                 picsdir= QFileDialog.getExistingDirectory()
                 self.lineEdit_pic_val.setText( picsdir)
+    def btn_model_rltu_click(self):
+            model_dir=QFileDialog.getOpenFileName(self,'model name','./',filter="*.pth")
+            self.lineEditmodel_relitu.setText(model_dir[0])
+    def btn_pic_relitu_click(self):
+            pic_name=QFileDialog.getOpenFileName(self,'pic name','./',"Images (*.png *.xpm *.jpg)")
+            self.lineEdit_pic_relitu.setText(pic_name[0])
+    def btn_relitu_click(self):
+        if(self.lineEditmodel_relitu.text()=='' or self.lineEdit_pic_relitu.text()==''):
+            return
+        device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        model=torch.load(self.lineEditmodel_relitu.text())
+        model.eval()
+        model.to(device)
+        target_layers = [model.layer4[-1]]
+        img_path = self.lineEdit_pic_relitu.text()
+        img_pil = Image.open(img_path)
+        test_transform=transforms.Compose(
+            [transforms.Resize(int(self.img_size.text())),transforms.ToTensor()]
+        )
+        result=get_relitu(model=model,target_layers=target_layers,img_pil=img_pil,test_transform=test_transform,device=device)
+        self.matplot_relitu.draw_relitu(result)
+        msg_box = QtWidgets.QMessageBox(QtWidgets.QMessageBox.Information, '热力图生成完成', '热力图生成完成') #Information可替换为Warning、Critical其他提示框类型
+        # msg_box.setWindowIcon(QtGui.QIcon('logo.ico')) #加载图标
+        msg_box.exec()
+
+
     # def btn_trainT_cleck(self):
                 
     #             self.t_text= QFileDialog.getOpenFileName()
@@ -1278,8 +1307,13 @@ class mywindow(QtWidgets.QWidget,Ui_UI):
                 # self.horizontalLayout_2.addWidget(self.matplot_loss)
                 self.verticalLayout_loss.addWidget(self.matplot_loss)
                 self.verticalLayout_metr.addWidget(self.matplot_ma)
+                self.verticalLayout_relitu.addWidget(self.matplot_relitu)
                 self.horizontalLayout_2.setStretch(0,1)
                 self.horizontalLayout_2.setStretch(1,1)
+                self.btn_model_rltu.clicked.connect(self.btn_model_rltu_click)
+                self.btn_pic_lelitu.clicked.connect(self.btn_pic_relitu_click)
+                self.btn_create_relitu.clicked.connect(self.btn_relitu_click)
+
                 self.pic_model(0)
 
     def draw_loss(self,loss1:list,loss2:list):#画loss

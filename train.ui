@@ -348,7 +348,7 @@
        <item>
         <widget class="QTabWidget" name="tabWidget_matplot">
          <property name="currentIndex">
-          <number>1</number>
+          <number>2</number>
          </property>
          <widget class="QWidget" name="tab_loss">
           <attribute name="title">
@@ -367,6 +367,48 @@
           <layout class="QHBoxLayout" name="horizontalLayout_9">
            <item>
             <layout class="QVBoxLayout" name="verticalLayout_metr"/>
+           </item>
+          </layout>
+         </widget>
+         <widget class="QWidget" name="tab">
+          <attribute name="title">
+           <string>热力图</string>
+          </attribute>
+          <layout class="QHBoxLayout" name="horizontalLayout_8">
+           <item>
+            <layout class="QVBoxLayout" name="verticalLayout_relitu">
+             <item>
+              <layout class="QHBoxLayout" name="horizontalLayout_relitu">
+               <item>
+                <widget class="QPushButton" name="btn_model_rltu">
+                 <property name="text">
+                  <string>选择模型</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLineEdit" name="lineEditmodel_relitu"/>
+               </item>
+               <item>
+                <widget class="QPushButton" name="btn_pic_lelitu">
+                 <property name="text">
+                  <string>选择图片</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLineEdit" name="lineEdit_pic_relitu"/>
+               </item>
+               <item>
+                <widget class="QPushButton" name="btn_create_relitu">
+                 <property name="text">
+                  <string>生成热力图</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+            </layout>
            </item>
           </layout>
          </widget>
