@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1335</width>
-    <height>651</height>
+    <width>1165</width>
+    <height>773</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -348,7 +348,7 @@
        <item>
         <widget class="QTabWidget" name="tabWidget_matplot">
          <property name="currentIndex">
-          <number>2</number>
+          <number>0</number>
          </property>
          <widget class="QWidget" name="tab_loss">
           <attribute name="title">

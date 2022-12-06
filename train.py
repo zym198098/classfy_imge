@@ -1339,6 +1339,11 @@ class mywindow(QtWidgets.QWidget,Ui_UI):
 if __name__=='__main__':
 
     app = QtWidgets.QApplication(sys.argv)
+    style_file='style.qss'
+    qss=None
+    with open(style_file, 'r') as f:
+        qss= f.read()
+    app.setStyleSheet(qss)
     window = mywindow()
     window.show()
     sys.exit(app.exec_())
